@@ -1,4 +1,4 @@
-// 主应用逻辑 - 最终精简版
+// 主应用 - 最终修复版
 
 class ProxyApp {
     constructor() {
@@ -14,21 +14,21 @@ class ProxyApp {
     }
 
     async init() {
+        console.log('🚀 应用初始化...');
         this.loadLocalData();
         await this.loadProxyData();
         this.setupEventListeners();
         this.setupKeyboardShortcuts();
         this.showUpdateTime();
-        this.animateStats();
         this.loadQuickFilters();
     }
 
-    // 加载本地数据
     loadLocalData() {
         try {
             const savedFavorites = localStorage.getItem('proxyFavorites');
             if (savedFavorites) {
                 this.favorites = new Set(JSON.parse(savedFavorites));
+                console.log('✅ 已加载', this.favorites.size, '个收藏');
             }
 
             const savedHistory = localStorage.getItem('searchHistory');
@@ -40,33 +40,51 @@ class ProxyApp {
             document.body.setAttribute('data-theme', savedTheme);
             this.updateThemeIcon(savedTheme);
         } catch (error) {
-            console.error('加载本地数据失败:', error);
+            console.error('❌ 加载本地数据失败:', error);
         }
     }
 
-    // 保存本地数据
     saveLocalData() {
         try {
             localStorage.setItem('proxyFavorites', JSON.stringify([...this.favorites]));
             localStorage.setItem('searchHistory', JSON.stringify(this.searchHistory));
         } catch (error) {
-            console.error('保存本地数据失败:', error);
+            console.error('❌ 保存失败:', error);
         }
     }
 
     async loadProxyData() {
+        console.log('📡 开始加载代理数据...');
+        
         try {
+            // 先尝试本地路径
             let response = await fetch(config.dataUrl);
             
             if (!response.ok) {
-                console.log('本地数据加载失败，使用GitHub源...');
+                console.log('⚠️ 本地数据加载失败，尝试备用源...');
                 response = await fetch(config.fallbackDataUrl);
             }
 
+            if (!response.ok) {
+                throw new Error('数据加载失败');
+            }
+
             const text = await response.text();
-            const lines = text.trim().split('\n').filter(line => line.trim());
+            console.log('📥 收到数据，长度:', text.length);
             
-            this.allProxies = lines.map(line => parseProxyLine(line));
+            const lines = text.trim().split('\n').filter(line => line.trim());
+            console.log('📋 总行数:', lines.length);
+            
+            this.allProxies = lines
+                .map(line => parseProxyLine(line))
+                .filter(proxy => proxy !== null);
+            
+            console.log('✅ 成功解析', this.allProxies.length, '个代理');
+            
+            if (this.allProxies.length === 0) {
+                throw new Error('没有有效的代理数据');
+            }
+            
             this.filteredProxies = [...this.allProxies];
             
             this.populateFilters();
@@ -79,17 +97,22 @@ class ProxyApp {
             toggleElement('proxyTable', true);
             toggleElement('paginationContainer', true);
             
-            this.showNotification('✅ 数据加载成功！', 'success');
+            this.showNotification('✅ 数据加载成功！共 ' + this.allProxies.length + ' 个代理', 'success');
             
         } catch (error) {
-            console.error('数据加载失败:', error);
+            console.error('❌ 加载失败:', error);
             document.getElementById('loadingMessage').innerHTML = `
-                <div class="loading-spinner"></div>
-                <p class="loading-text" style="color: var(--danger-color);">❌ 数据加载失败</p>
-                <p class="loading-subtext">请检查网络连接或稍后重试</p>
-                <button onclick="location.reload()" class="refresh-btn" style="margin-top: 20px;">
-                    🔄 重新加载
-                </button>
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">😢</div>
+                    <h3 style="color: var(--danger-color); margin-bottom: 12px;">数据加载失败</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                        ${error.message}<br>
+                        请检查网络连接或稍后重试
+                    </p>
+                    <button onclick="location.reload()" class="copy-btn" style="padding: 12px 32px;">
+                        🔄 重新加载
+                    </button>
+                </div>
             `;
         }
     }
@@ -103,46 +126,46 @@ class ProxyApp {
         const portSelect = document.getElementById('portFilter');
         const companySelect = document.getElementById('companyFilter');
 
-        countrySelect.innerHTML = '<option value="">全部国家</option>';
-        portSelect.innerHTML = '<option value="">全部端口</option>';
-        companySelect.innerHTML = '<option value="">全部公司</option>';
+        countrySelect.innerHTML = '<option value="">🌏 全部国家</option>';
+        portSelect.innerHTML = '<option value="">🔌 全部端口</option>';
+        companySelect.innerHTML = '<option value="">🏢 全部运营商</option>';
 
         countries.forEach(country => {
             const option = document.createElement('option');
             option.value = country;
-            option.textContent = country;
+            option.textContent = '🌍 ' + country;
             countrySelect.appendChild(option);
         });
 
         ports.forEach(port => {
             const option = document.createElement('option');
             option.value = port;
-            option.textContent = `端口 ${port}`;
+            option.textContent = `🔌 端口 ${port}`;
             portSelect.appendChild(option);
         });
 
         companies.forEach(company => {
             const option = document.createElement('option');
             option.value = company;
-            option.textContent = company.length > 50 ? company.substring(0, 50) + '...' : company;
+            const displayName = company.length > 45 ? company.substring(0, 45) + '...' : company;
+            option.textContent = '🏢 ' + displayName;
             option.title = company;
             companySelect.appendChild(option);
         });
 
-        console.log(`✅ 已加载 ${countries.length} 个国家，${ports.length} 个端口，${companies.length} 个公司`);
+        console.log(`✅ 筛选器就绪: ${countries.length}国家, ${ports.length}端口, ${companies.length}运营商`);
     }
 
-    // 加载快速筛选标签
     loadQuickFilters() {
         const quickFilters = document.getElementById('quickFilters');
         const popularPorts = ['80', '443', '8080', '3128', '1080'];
         const popularCountries = ['美国', '日本', '新加坡', '香港', '德国'];
 
-        let html = '<span class="quick-filter-label">快速筛选：</span>';
+        let html = '<span class="quick-filter-label">🔥 热门筛选：</span>';
         
         popularPorts.forEach(port => {
             html += `<span class="quick-filter-tag" onclick="quickFilter('port', '${port}')">
-                🔌 ${port}
+                🔌 端口 ${port}
             </span>`;
         });
 
@@ -164,7 +187,7 @@ class ProxyApp {
 
         if (this.filteredProxies.length === 0) {
             table.style.display = 'none';
-            noData.style.display = 'block';
+            noData.style.display = 'flex';
             toggleElement('paginationContainer', false);
             return;
         }
@@ -189,22 +212,22 @@ class ProxyApp {
                     <input type="checkbox" class="row-checkbox" data-index="${globalIndex}" ${this.selectedRows.has(globalIndex) ? 'checked' : ''}>
                 </td>
                 <td class="col-star">
-                    <button class="star-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite('${proxy.ip}', '${proxy.port}')" title="${isFavorited ? '取消收藏' : '添加收藏'}">
+                    <button class="star-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite('${proxy.ip}', '${proxy.port}')" title="${isFavorited ? '取消收藏' : '点击收藏'}">
                         ${isFavorited ? '⭐' : '☆'}
                     </button>
                 </td>
                 <td class="col-ip">
-                    <span class="ip-clickable" onclick="showIPDetails('${proxy.ip}')" title="点击查看详情">${proxy.ip}</span>
+                    <span class="ip-clickable" onclick="showIPDetails('${proxy.ip}')" title="点击查看IP详情">${proxy.ip}</span>
                 </td>
                 <td class="col-port">
                     <span class="port-badge">${proxy.port}</span>
                 </td>
                 <td class="col-country">${proxy.countryName}</td>
                 <td class="col-company" title="${proxy.company}">
-                    ${proxy.company.length > 40 ? proxy.company.substring(0, 40) + '...' : proxy.company}
+                    ${proxy.company.length > 35 ? proxy.company.substring(0, 35) + '...' : proxy.company}
                 </td>
                 <td class="col-actions">
-                    <button class="copy-btn" onclick="app.handleCopy('${proxy.ip}:${proxy.port}', this)" title="复制IP:端口">
+                    <button class="copy-btn" onclick="app.handleCopy('${proxy.ip}:${proxy.port}', this)" title="复制 IP:端口">
                         📋 复制
                     </button>
                 </td>
@@ -212,7 +235,6 @@ class ProxyApp {
             tbody.appendChild(row);
         });
 
-        // 更新分页信息
         this.updatePagination(totalPages, startIndex, endIndex);
 
         // 添加checkbox事件
@@ -230,7 +252,6 @@ class ProxyApp {
     }
 
     updatePagination(totalPages, startIndex, endIndex) {
-        document.getElementById('currentPage').textContent = this.currentPage;
         document.getElementById('totalPages').textContent = totalPages;
         document.getElementById('pageInput').value = this.currentPage;
         document.getElementById('pageInput').max = totalPages;
@@ -261,8 +282,6 @@ class ProxyApp {
             this.saveLocalData();
         }
 
-        console.log('🔍 筛选条件:', { searchTerm, countryFilter, portFilter, companyFilter });
-
         this.filteredProxies = this.allProxies.filter(proxy => {
             const matchesSearch = !searchTerm || 
                 proxy.ip.toLowerCase().includes(searchTerm) ||
@@ -277,8 +296,6 @@ class ProxyApp {
             return matchesSearch && matchesCountry && matchesPort && matchesCompany;
         });
 
-        console.log(`✅ 筛选结果: ${this.filteredProxies.length} 条记录`);
-
         this.currentPage = 1;
         this.selectedRows.clear();
         this.applySort();
@@ -287,7 +304,6 @@ class ProxyApp {
         this.updateFilterTrend();
     }
 
-    // 应用排序
     applySort() {
         const sortMethod = document.getElementById('sortFilter')?.value || this.sortMethod;
         this.sortMethod = sortMethod;
@@ -311,8 +327,6 @@ class ProxyApp {
             case 'country-desc':
                 this.filteredProxies.sort((a, b) => b.countryName.localeCompare(a.countryName));
                 break;
-            default:
-                break;
         }
     }
 
@@ -332,10 +346,10 @@ class ProxyApp {
         const percentage = ((this.filteredProxies.length / this.allProxies.length) * 100).toFixed(1);
         
         if (this.filteredProxies.length === this.allProxies.length) {
-            filterTrend.textContent = '未筛选';
+            filterTrend.textContent = '等待筛选';
             filterTrend.style.color = 'var(--text-secondary)';
         } else {
-            filterTrend.textContent = `${percentage}% 匹配`;
+            filterTrend.textContent = `匹配 ${percentage}%`;
             filterTrend.style.color = 'var(--warning-color)';
         }
     }
@@ -353,42 +367,30 @@ class ProxyApp {
     updateFavoritesBadge() {
         const badge = document.getElementById('favoritesBadge');
         badge.textContent = this.favorites.size;
-        badge.style.display = this.favorites.size > 0 ? 'block' : 'none';
+        badge.style.display = this.favorites.size > 0 ? 'flex' : 'none';
     }
 
     showUpdateTime() {
         const updateTime = document.getElementById('updateTime');
         const now = new Date();
         const timeStr = now.toLocaleString('zh-CN', { 
-            year: 'numeric', 
             month: '2-digit', 
             day: '2-digit',
             hour: '2-digit', 
-            minute: '2-digit',
-            second: '2-digit'
+            minute: '2-digit'
         });
-        updateTime.textContent = `最后更新: ${timeStr}`;
+        updateTime.textContent = `✅ 数据已更新 (${timeStr})`;
         
         setInterval(() => {
             const now = new Date();
             const timeStr = now.toLocaleString('zh-CN', { 
-                year: 'numeric', 
                 month: '2-digit', 
                 day: '2-digit',
                 hour: '2-digit', 
-                minute: '2-digit',
-                second: '2-digit'
+                minute: '2-digit'
             });
-            updateTime.textContent = `最后更新: ${timeStr}`;
+            updateTime.textContent = `✅ 数据已更新 (${timeStr})`;
         }, 60000);
-    }
-
-    animateStats() {
-        setTimeout(() => {
-            document.querySelectorAll('.stat-card').forEach(card => {
-                card.classList.add('animated');
-            });
-        }, 100);
     }
 
     showNotification(message, type = 'info') {
@@ -401,11 +403,13 @@ class ProxyApp {
             right: 20px;
             padding: 16px 24px;
             background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            border: 2px solid ${type === 'success' ? 'var(--success-color)' : 'var(--primary-color)'};
             border-radius: 12px;
             box-shadow: var(--shadow-lg);
             z-index: 10000;
             animation: slideInRight 0.3s ease;
+            font-weight: 600;
+            color: var(--text-primary);
         `;
         
         document.body.appendChild(notification);
@@ -421,10 +425,7 @@ class ProxyApp {
         
         const searchInput = document.getElementById('searchInput');
         searchInput.addEventListener('input', debouncedFilter);
-        
-        searchInput.addEventListener('focus', () => {
-            this.showSearchHistory();
-        });
+        searchInput.addEventListener('focus', () => this.showSearchHistory());
 
         document.getElementById('countryFilter').addEventListener('change', () => this.applyFilters());
         document.getElementById('portFilter').addEventListener('change', () => this.applyFilters());
@@ -482,12 +483,12 @@ class ProxyApp {
                 document.getElementById('searchInput').focus();
             }
             
-            if (e.ctrlKey && e.key === 'a' && !e.target.matches('input, textarea')) {
+            if (e.ctrlKey && e.key === 'a' && !e.target.matches('input, textarea, select')) {
                 e.preventDefault();
                 selectAll();
             }
             
-            if (e.ctrlKey && e.key === 'c' && !e.target.matches('input, textarea')) {
+            if (e.ctrlKey && e.key === 'c' && !e.target.matches('input, textarea, select')) {
                 if (this.selectedRows.size > 0) {
                     e.preventDefault();
                     copySelected();
@@ -498,7 +499,7 @@ class ProxyApp {
                 closeFavorites();
             }
             
-            if (e.key === '?' && !e.target.matches('input, textarea')) {
+            if (e.key === '?' && !e.target.matches('input, textarea, select')) {
                 toggleKeyboardHints();
             }
         });
@@ -509,12 +510,14 @@ class ProxyApp {
     }
 }
 
-// 分页功能
+// === 全局函数 ===
+
+// 分页
 function prevPage() {
     if (app.currentPage > 1) {
         app.currentPage--;
         app.renderTable();
-        scrollToTop();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
@@ -523,21 +526,21 @@ function nextPage() {
     if (app.currentPage < totalPages) {
         app.currentPage++;
         app.renderTable();
-        scrollToTop();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
 function firstPage() {
     app.currentPage = 1;
     app.renderTable();
-    scrollToTop();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function lastPage() {
     const totalPages = Math.ceil(app.filteredProxies.length / app.pageSize);
     app.currentPage = totalPages;
     app.renderTable();
-    scrollToTop();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function goToPage() {
@@ -548,9 +551,10 @@ function goToPage() {
     if (page >= 1 && page <= totalPages) {
         app.currentPage = page;
         app.renderTable();
-        scrollToTop();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
         input.value = app.currentPage;
+        app.showNotification('⚠️ 页码超出范围', 'warning');
     }
 }
 
@@ -558,13 +562,10 @@ function changePageSize() {
     app.pageSize = parseInt(document.getElementById('pageSizeFilter').value);
     app.currentPage = 1;
     app.renderTable();
+    app.showNotification(`✅ 已切换到每页 ${app.pageSize} 条`, 'success');
 }
 
-function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// 全选功能
+// 选择
 function toggleSelectAll() {
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const checkboxes = document.querySelectorAll('.row-checkbox');
@@ -585,10 +586,10 @@ function selectAll() {
         app.selectedRows.add(index);
     });
     app.renderTable();
-    app.showNotification(`✅ 已选择 ${app.filteredProxies.length} 个代理`, 'success');
+    app.showNotification(`✅ 已选择全部 ${app.filteredProxies.length} 个代理`, 'success');
 }
 
-// 复制选中
+// 复制
 function copySelected() {
     if (app.selectedRows.size === 0) {
         app.showNotification('⚠️ 请先选择要复制的代理', 'warning');
@@ -605,11 +606,11 @@ function copySelected() {
         app.showNotification(`✅ 已复制 ${app.selectedRows.size} 个代理`, 'success');
     }).catch(err => {
         console.error('复制失败:', err);
-        app.showNotification('❌ 复制失败，请手动复制', 'error');
+        app.showNotification('❌ 复制失败', 'error');
     });
 }
 
-// 收藏功能
+// 收藏
 function toggleFavorite(ip, port) {
     const key = `${ip}:${port}`;
     
@@ -618,7 +619,7 @@ function toggleFavorite(ip, port) {
         app.showNotification('💔 已取消收藏', 'info');
     } else {
         app.favorites.add(key);
-        app.showNotification('⭐ 已添加到收藏', 'success');
+        app.showNotification('⭐ 已添加到收藏夹', 'success');
     }
     
     app.saveLocalData();
@@ -647,12 +648,17 @@ function addToFavorites() {
     app.saveLocalData();
     app.updateFavoritesBadge();
     app.renderTable();
-    app.showNotification(`⭐ 已添加 ${added} 个代理到收藏`, 'success');
+    
+    if (added > 0) {
+        app.showNotification(`⭐ 已添加 ${added} 个代理到收藏夹`, 'success');
+    } else {
+        app.showNotification('ℹ️ 这些代理已在收藏夹中', 'info');
+    }
 }
 
 function openFavorites() {
     if (app.favorites.size === 0) {
-        app.showNotification('📭 收藏夹是空的', 'info');
+        app.showNotification('📭 收藏夹是空的，快去收藏一些代理吧！', 'info');
         return;
     }
 
@@ -670,13 +676,13 @@ function openFavorites() {
                     <div class="favorite-info">
                         <div class="favorite-ip">${ip}:${port}</div>
                         <div class="favorite-details">
-                            ${proxy.countryName} · ${proxy.company}
+                            🌍 ${proxy.countryName} · 🏢 ${proxy.company}
                         </div>
                     </div>
                     <div class="favorite-actions">
                         <button class="copy-btn" onclick="app.handleCopy('${ip}:${port}', this)">📋 复制</button>
                         <button class="copy-btn" style="background: var(--danger-color);" onclick="toggleFavorite('${ip}', '${port}'); openFavorites();">
-                            🗑️ 删除
+                            🗑️ 移除
                         </button>
                     </div>
                 </div>
@@ -692,18 +698,22 @@ function closeFavorites() {
     document.getElementById('favoritesModal').style.display = 'none';
 }
 
-// 重置筛选
+// 筛选
 function resetFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('countryFilter').value = '';
     document.getElementById('portFilter').value = '';
     document.getElementById('companyFilter').value = '';
     document.getElementById('sortFilter').value = 'default';
+    
+    document.querySelectorAll('.quick-filter-tag').forEach(tag => {
+        tag.classList.remove('active');
+    });
+    
     app.applyFilters();
     app.showNotification('🔄 已重置所有筛选条件', 'info');
 }
 
-// 保存筛选条件
 function saveFilter() {
     const filter = {
         search: document.getElementById('searchInput').value,
@@ -714,14 +724,13 @@ function saveFilter() {
     };
     
     localStorage.setItem('savedFilter', JSON.stringify(filter));
-    app.showNotification('💾 筛选条件已保存', 'success');
+    app.showNotification('💾 筛选方案已保存', 'success');
 }
 
-// 加载筛选条件
 function loadFilter() {
     const saved = localStorage.getItem('savedFilter');
     if (!saved) {
-        app.showNotification('⚠️ 没有保存的筛选条件', 'warning');
+        app.showNotification('⚠️ 没有保存的筛选方案', 'warning');
         return;
     }
 
@@ -733,10 +742,9 @@ function loadFilter() {
     document.getElementById('sortFilter').value = filter.sort || 'default';
     
     app.applyFilters();
-    app.showNotification('📂 筛选条件已加载', 'success');
+    app.showNotification('📂 筛选方案已加载', 'success');
 }
 
-// 快速筛选
 function quickFilter(type, value) {
     if (type === 'port') {
         document.getElementById('portFilter').value = value;
@@ -752,14 +760,14 @@ function quickFilter(type, value) {
     event.target.classList.add('active');
 }
 
-// 收藏网站到浏览器
+// 网站功能
 function addToBookmarks() {
     const title = '代理IP优选中心';
     const url = window.location.href;
     
     if (window.sidebar && window.sidebar.addPanel) {
         window.sidebar.addPanel(title, url, '');
-        app.showNotification('✅ 请在侧边栏确认添加收藏', 'success');
+        app.showNotification('✅ 请在侧边栏确认添加', 'success');
     } else if (window.external && ('AddFavorite' in window.external)) {
         window.external.AddFavorite(url, title);
         app.showNotification('✅ 已添加到收藏夹', 'success');
@@ -782,15 +790,15 @@ function addToBookmarks() {
                         将本站添加到收藏夹
                     </h3>
                     <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6;">
-                        请按 <kbd>${shortcut}</kbd> 将本站添加到浏览器收藏夹，<br>
-                        方便下次快速访问
+                        请按 <kbd style="padding: 4px 10px; background: var(--dark-bg); border: 1px solid var(--border-color); border-radius: 4px;">${shortcut}</kbd> 
+                        将本站添加到浏览器收藏夹
                     </p>
                     <div style="background: var(--dark-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-                        <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">网站链接</div>
+                        <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">网站地址</div>
                         <div style="color: var(--primary-color); font-weight: 600; word-break: break-all;">${url}</div>
                     </div>
                     <button onclick="copyCurrentUrl(); this.closest('.bookmark-modal').remove();" class="copy-btn" style="width: 100%; padding: 12px;">
-                        📋 复制链接
+                        📋 复制网址
                     </button>
                 </div>
             </div>
@@ -800,18 +808,17 @@ function addToBookmarks() {
     }
 }
 
-// 复制当前网址
 function copyCurrentUrl() {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
-        app.showNotification('✅ 网址已复制到剪贴板', 'success');
+        app.showNotification('✅ 网址已复制，可以分享给朋友了', 'success');
     }).catch(err => {
         console.error('复制失败:', err);
         app.showNotification('❌ 复制失败', 'error');
     });
 }
 
-// 主题切换
+// 主题
 function toggleTheme() {
     const body = document.body;
     const currentTheme = body.getAttribute('data-theme');
@@ -820,7 +827,7 @@ function toggleTheme() {
     body.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     app.updateThemeIcon(newTheme);
-    app.showNotification(`${newTheme === 'dark' ? '🌙' : '☀️'} 已切换到${newTheme === 'dark' ? '深色' : '浅色'}模式`, 'info');
+    app.showNotification(`${newTheme === 'dark' ? '🌙 已切换到深色模式' : '☀️ 已切换到浅色模式'}`, 'success');
 }
 
 // 快捷键提示
@@ -833,31 +840,18 @@ function toggleKeyboardHints() {
     }
 }
 
-// 清除缓存并重载
-function clearCacheAndReload() {
-    if ('caches' in window) {
-        caches.keys().then(function(names) {
-            for (let name of names) {
-                caches.delete(name);
-            }
-        });
-    }
-    
-    app.showNotification('🔄 正在刷新...', 'info');
-    setTimeout(() => window.location.reload(true), 500);
-}
-
-// 创建全局应用实例
+// 初始化
 let app;
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎉 页面加载完成，启动应用...');
     app = new ProxyApp();
     
     setTimeout(() => {
         toggleKeyboardHints();
-    }, 1000);
+    }, 1500);
 });
 
-// 添加CSS动画
+// 添加动画样式
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideInRight {
