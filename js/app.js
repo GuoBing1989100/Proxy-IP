@@ -47,9 +47,15 @@ class ProxyApp {
                 this.allProxies = lines.map(line => this.parseProxyLine(line)).filter(p => p.ip);
                 this.filteredProxies = [...this.allProxies];
                 
-                console.log(`成功加载 ${this.allProxies.length} 条代理数据`);
+                console.log(`✅ 成功加载 ${this.allProxies.length} 条代理数据`);
                 
+                // 先设置事件监听器
+                this.setupEventListeners();
+                
+                // 再填充筛选器
                 this.populateFilters();
+                
+                // 渲染表格
                 this.renderTable();
                 this.updateStats();
                 
@@ -62,7 +68,7 @@ class ProxyApp {
 
             } catch (error) {
                 retryCount++;
-                console.error(`数据加载失败 (尝试 ${retryCount}/${maxRetries}):`, error);
+                console.error(`❌ 数据加载失败 (尝试 ${retryCount}/${maxRetries}):`, error);
                 
                 if (retryCount < maxRetries) {
                     const delay = Math.pow(2, retryCount) * 1000;
@@ -102,13 +108,25 @@ class ProxyApp {
      * 填充筛选器选项
      */
     populateFilters() {
-        const countries = [...new Set(this.allProxies.map(p => p.countryName))].sort();
-        const companies = [...new Set(this.allProxies.map(p => p.company))].sort();
-        const ports = [...new Set(this.allProxies.map(p => p.port))].sort((a, b) => parseInt(a) - parseInt(b));
+        console.log('🔄 开始填充筛选器...');
+        
+        // 提取唯一值并排序
+        const countries = [...new Set(this.allProxies.map(p => p.countryName).filter(c => c))].sort();
+        const companies = [...new Set(this.allProxies.map(p => p.company).filter(c => c))].sort();
+        const ports = [...new Set(this.allProxies.map(p => p.port).filter(p => p))].sort((a, b) => {
+            return parseInt(a) - parseInt(b);
+        });
+
+        console.log(`📊 统计: ${countries.length} 个国家, ${companies.length} 个公司, ${ports.length} 个端口`);
 
         const countrySelect = document.getElementById('countryFilter');
         const companySelect = document.getElementById('companyFilter');
         const portSelect = document.getElementById('portFilter');
+
+        if (!countrySelect || !companySelect || !portSelect) {
+            console.error('❌ 筛选器元素未找到！');
+            return;
+        }
 
         // 清空并重建选项
         countrySelect.innerHTML = '<option value="">全部国家</option>';
@@ -140,7 +158,82 @@ class ProxyApp {
             portSelect.appendChild(option);
         });
 
-        console.log(`已加载 ${countries.length} 个国家，${companies.length} 个公司，${ports.length} 个端口`);
+        console.log('✅ 筛选器填充完成');
+        console.log(`   - 国家选项数: ${countrySelect.options.length}`);
+        console.log(`   - 公司选项数: ${companySelect.options.length}`);
+        console.log(`   - 端口选项数: ${portSelect.options.length}`);
+    }
+
+    /**
+     * 设置事件监听器
+     */
+    setupEventListeners() {
+        const countryFilter = document.getElementById('countryFilter');
+        const companyFilter = document.getElementById('companyFilter');
+        const portFilter = document.getElementById('portFilter');
+        const exportBtn = document.getElementById('exportBtn');
+
+        if (!countryFilter || !companyFilter || !portFilter) {
+            console.error('❌ 无法找到筛选器元素');
+            return;
+        }
+
+        // 移除旧的事件监听器（如果有）
+        const newCountryFilter = countryFilter.cloneNode(true);
+        const newCompanyFilter = companyFilter.cloneNode(true);
+        const newPortFilter = portFilter.cloneNode(true);
+        
+        countryFilter.parentNode.replaceChild(newCountryFilter, countryFilter);
+        companyFilter.parentNode.replaceChild(newCompanyFilter, companyFilter);
+        portFilter.parentNode.replaceChild(newPortFilter, portFilter);
+
+        // 添加新的事件监听器
+        document.getElementById('countryFilter').addEventListener('change', (e) => {
+            console.log('🌍 国家筛选:', e.target.value);
+            this.applyFilters();
+        });
+
+        document.getElementById('companyFilter').addEventListener('change', (e) => {
+            console.log('🏢 公司筛选:', e.target.value);
+            this.applyFilters();
+        });
+
+        document.getElementById('portFilter').addEventListener('change', (e) => {
+            console.log('🔌 端口筛选:', e.target.value);
+            this.applyFilters();
+        });
+
+        exportBtn.addEventListener('click', () => this.exportToCSV());
+
+        console.log('✅ 事件监听器设置完成');
+    }
+
+    /**
+     * 应用筛选条件
+     */
+    applyFilters() {
+        const selectedCountry = document.getElementById('countryFilter').value;
+        const selectedCompany = document.getElementById('companyFilter').value;
+        const selectedPort = document.getElementById('portFilter').value;
+
+        console.log('🔍 应用筛选:', { 
+            country: selectedCountry || '全部', 
+            company: selectedCompany || '全部', 
+            port: selectedPort || '全部' 
+        });
+
+        this.filteredProxies = this.allProxies.filter(proxy => {
+            const matchCountry = !selectedCountry || proxy.countryName === selectedCountry;
+            const matchCompany = !selectedCompany || proxy.company === selectedCompany;
+            const matchPort = !selectedPort || proxy.port === selectedPort;
+
+            return matchCountry && matchCompany && matchPort;
+        });
+
+        console.log(`📊 筛选结果: ${this.filteredProxies.length} / ${this.allProxies.length}`);
+
+        this.renderTable();
+        this.updateStats();
     }
 
     /**
@@ -199,41 +292,6 @@ class ProxyApp {
     }
 
     /**
-     * 设置事件监听器
-     */
-    setupEventListeners() {
-        const countryFilter = document.getElementById('countryFilter');
-        const companyFilter = document.getElementById('companyFilter');
-        const portFilter = document.getElementById('portFilter');
-        const exportBtn = document.getElementById('exportBtn');
-
-        countryFilter.addEventListener('change', () => this.applyFilters());
-        companyFilter.addEventListener('change', () => this.applyFilters());
-        portFilter.addEventListener('change', () => this.applyFilters());
-        exportBtn.addEventListener('click', () => this.exportToCSV());
-    }
-
-    /**
-     * 应用筛选条件
-     */
-    applyFilters() {
-        const selectedCountry = document.getElementById('countryFilter').value;
-        const selectedCompany = document.getElementById('companyFilter').value;
-        const selectedPort = document.getElementById('portFilter').value;
-
-        this.filteredProxies = this.allProxies.filter(proxy => {
-            const matchCountry = !selectedCountry || proxy.countryName === selectedCountry;
-            const matchCompany = !selectedCompany || proxy.company === selectedCompany;
-            const matchPort = !selectedPort || proxy.port === selectedPort;
-
-            return matchCountry && matchCompany && matchPort;
-        });
-
-        this.renderTable();
-        this.updateStats();
-    }
-
-    /**
      * 更新统计信息
      */
     updateStats() {
@@ -277,6 +335,8 @@ class ProxyApp {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+
+        console.log('📥 CSV 导出完成');
     }
 
     /**
@@ -284,17 +344,25 @@ class ProxyApp {
      */
     showProgress(show) {
         const progressBar = document.getElementById('progressBar');
+        if (!progressBar) return;
+        
         progressBar.style.display = show ? 'block' : 'none';
         
         if (show) {
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 10;
-                document.getElementById('progressFill').style.width = progress + '%';
+                const progressFill = document.getElementById('progressFill');
+                if (progressFill) {
+                    progressFill.style.width = progress + '%';
+                }
                 if (progress >= 90) clearInterval(interval);
             }, 200);
         } else {
-            document.getElementById('progressFill').style.width = '100%';
+            const progressFill = document.getElementById('progressFill');
+            if (progressFill) {
+                progressFill.style.width = '100%';
+            }
         }
     }
 
@@ -303,6 +371,8 @@ class ProxyApp {
      */
     setupThemeToggle() {
         const themeToggle = document.getElementById('themeToggle');
+        if (!themeToggle) return;
+        
         const currentTheme = localStorage.getItem('theme') || 'light';
         
         document.documentElement.setAttribute('data-theme', currentTheme);
@@ -315,17 +385,14 @@ class ProxyApp {
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            
+            console.log('🎨 主题切换:', newTheme);
         });
     }
 }
 
-// 全局实例
-let app;
-
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
-    app = new ProxyApp();
+    console.log('🚀 应用初始化...');
+    window.app = new ProxyApp();
 });
-
-// 暴露到全局作用域
-window.app = app;
