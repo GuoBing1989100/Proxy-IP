@@ -622,24 +622,36 @@
                 // 添加时间戳防止缓存
                 const timestamp = new Date().getTime();
                 const response = await fetch(`../Data/alive.txt?t=${timestamp}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误! 状态: ${response.status}`);
+                }
+                
                 const text = await response.text();
                 
-                allData = text.trim().split('\n').map(line => {
-                const parts = line.split(',');
-                const ip = parts[0];
-                const port = parts[1];
-                const countryCode = parts[2];
-                    // 将剩余部分合并为公司名（处理公司名中包含逗号的情况）
-                const company = parts.slice(3).join(',').trim() || 'Unknown';
-    
-                return { 
-                ip, 
-                port, 
-                countryCode,
-                country: countryNames[countryCode] || countryCode, // 如果找不到映射，显示原代码
-                company
-                };
-                });
+                // 改进的数据解析逻辑
+                allData = text.trim().split('\n').filter(line => line.trim()).map(line => {
+                    // 使用更安全的解析方式
+                    const parts = line.split(',');
+                    
+                    // 确保至少有3个部分
+                    if (parts.length < 3) {
+                        console.warn('无效数据行:', line);
+                        return null;
+                    }
+                    
+                    const ip = parts[0] ? parts[0].trim() : '';
+                    const port = parts[1] ? parts[1].trim() : '';
+                    const countryCode = parts[2] ? parts[2].trim() : '';
+                    
+                    // 公司名可能包含逗号，所以取剩余所有部分
+                    const company = parts.length > 3 ? parts.slice(3).join(',').trim() : 'Unknown';
+                    
+                    // 获取中文国家名
+                    const country = countryNames[countryCode] || countryCode;
+                    
+                    return { ip, port, countryCode, country, company };
+                }).filter(item => item !== null); // 过滤掉无效数据
                 
                 filteredData = [...allData];
                 lastUpdateTime = new Date();
@@ -647,10 +659,17 @@
                 populateCountryFilter();
                 renderTable();
                 updateTimeDisplay();
+                
+                console.log('✅ 数据加载成功，共', allData.length, '条记录');
+                
             } catch (error) {
-                console.error('Error loading data:', error);
+                console.error('❌ 加载数据时出错:', error);
                 document.getElementById('tableBody').innerHTML = 
-                    '<tr><td colspan="5" style="text-align: center; color: #ff6b6b;">数据加载失败，请确保 Data/alive.txt 文件存在</td></tr>';
+                    `<tr><td colspan="5" style="text-align: center; color: #ff6b6b;">
+                        数据加载失败: ${error.message}<br>
+                        <small>请检查文件路径: ../Data/alive.txt</small>
+                    </td></tr>`;
+                showToast('❌ 数据加载失败');
             }
         }
 
