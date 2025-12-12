@@ -1,0 +1,5 @@
+name = "proxy-ip-selector"
+compatibility_date = "2025-12-12"
+
+[site]
+bucket = "./"
