@@ -14,7 +14,6 @@ class ProxyApp {
         await this.loadProxyData();
         this.setupEventListeners();
         this.setupThemeToggle();
-        this.setupInfiniteScroll();
     }
 
     /**
@@ -28,12 +27,12 @@ class ProxyApp {
             try {
                 this.showProgress(true);
                 
-                // 首先尝试从本地路径加载
+                // 首先尝试从主数据源加载
                 let response = await fetch(config.dataUrl);
                 
-                // 如果本地加载失败，使用GitHub Raw URL
+                // 如果主数据源失败，使用备用数据源
                 if (!response.ok) {
-                    console.log('本地数据加载失败，使用GitHub源...');
+                    console.log('主数据源加载失败，尝试备用数据源...');
                     response = await fetch(config.fallbackDataUrl);
                 }
 
@@ -53,6 +52,8 @@ class ProxyApp {
                 this.allProxies = lines.map(line => this.parseProxyLine(line)).filter(p => p.ip);
                 this.filteredProxies = [...this.allProxies];
                 
+                console.log(`成功加载 ${this.allProxies.length} 条代理数据`);
+                
                 this.populateFilters();
                 this.renderTable();
                 this.updateStats();
@@ -69,11 +70,9 @@ class ProxyApp {
                 console.error(`数据加载失败 (尝试 ${retryCount}/${maxRetries}):`, error);
                 
                 if (retryCount < maxRetries) {
-                    // 指数退避
                     const delay = Math.pow(2, retryCount) * 1000;
                     await new Promise(resolve => setTimeout(resolve, delay));
                 } else {
-                    // 最终失败
                     updateElementText('loadingMessage', '❌ 数据加载失败，请检查网络连接后刷新页面重试');
                     this.showProgress(false);
                 }
@@ -82,7 +81,7 @@ class ProxyApp {
     }
 
     /**
-     * 解析代理数据行（带数据清理）
+     * 解析代理数据行
      */
     parseProxyLine(line) {
         const parts = line.split(',');
@@ -114,9 +113,11 @@ class ProxyApp {
         const countrySelect = document.getElementById('countryFilter');
         const companySelect = document.getElementById('companyFilter');
 
+        // 保留第一个"全部"选项，清除其他选项
         countrySelect.innerHTML = '<option value="">全部国家</option>';
         companySelect.innerHTML = '<option value="">全部公司</option>';
 
+        // 添加国家选项
         countries.forEach(country => {
             const option = document.createElement('option');
             option.value = country;
@@ -124,6 +125,7 @@ class ProxyApp {
             countrySelect.appendChild(option);
         });
 
+        // 添加公司选项
         companies.forEach(company => {
             const option = document.createElement('option');
             option.value = company;
@@ -136,7 +138,7 @@ class ProxyApp {
     }
 
     /**
-     * 渲染代理表格（使用虚拟滚动）
+     * 渲染代理表格
      */
     renderTable(append = false) {
         const tbody = document.getElementById('proxyTableBody');
@@ -171,7 +173,7 @@ class ProxyApp {
                 <td>${proxy.countryName}</td>
                 <td title="${proxy.company}">${this.truncateText(proxy.company, 60)}</td>
                 <td>
-                    <button class="copy-btn" onclick="app.copyProxy('${proxy.ip}:${proxy.port}', this)">
+                    <button class="copy-btn" onclick="window.app.copyProxy('${proxy.ip}:${proxy.port}', this)">
                         📋 复制
                     </button>
                 </td>
@@ -190,8 +192,15 @@ class ProxyApp {
         const searchTerm = document.getElementById('searchInput').value.trim();
         if (!searchTerm) return text;
         
-        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        const regex = new RegExp(`(${this.escapeRegex(searchTerm)})`, 'gi');
         return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+
+    /**
+     * 转义正则表达式特殊字符
+     */
+    escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     /**
@@ -199,29 +208,6 @@ class ProxyApp {
      */
     truncateText(text, maxLength) {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-    }
-
-    /**
-     * 设置无限滚动
-     */
-    setupInfiniteScroll() {
-        const tableWrapper = document.querySelector('.table-wrapper');
-        
-        if (!tableWrapper) return;
-
-        this.observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && this.displayedCount < this.filteredProxies.length) {
-                    this.renderTable(true);
-                }
-            });
-        }, { threshold: 0.1 });
-
-        // 观察表格底部
-        const sentinel = document.createElement('div');
-        sentinel.id = 'scroll-sentinel';
-        tableWrapper.appendChild(sentinel);
-        this.observer.observe(sentinel);
     }
 
     /**
@@ -335,6 +321,8 @@ class ProxyApp {
                 document.getElementById('progressFill').style.width = progress + '%';
                 if (progress >= 90) clearInterval(interval);
             }, 200);
+        } else {
+            document.getElementById('progressFill').style.width = '100%';
         }
     }
 
@@ -366,3 +354,6 @@ let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new ProxyApp();
 });
+
+// 暴露到全局作用域供 HTML 调用
+window.app = app;
