@@ -3,303 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>代理IP优选中心 - 全球代理一站式服务</title>
-    
-    <meta http-equiv="Cache-Control" content="no-cache">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
-    
+    <title>代理IP优选中心</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-theme="dark">
-    <div class="bg-animation">
-        <div class="bg-circle"></div>
-        <div class="bg-circle"></div>
-        <div class="bg-circle"></div>
-    </div>
-
+<body>
     <div class="container">
-        <!-- 顶部导航 -->
+        <!-- 头部 -->
         <div class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <span class="logo-icon">🚀</span>
-                    <div class="logo-text">
-                        <h1>代理IP优选中心</h1>
-                        <p class="subtitle">全球代理 · 智能筛选 · 一键复制</p>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <button onclick="toggleTheme()" class="theme-btn">
-                        <span class="icon" id="themeIcon">🌙</span>
-                        <span class="text">切换主题</span>
-                    </button>
-                    <button onclick="openFavorites()" class="favorites-btn">
-                        <span class="icon">⭐</span>
-                        <span class="text">收藏夹</span>
-                        <span class="badge" id="favoritesBadge">0</span>
-                    </button>
-                    <button onclick="location.reload()" class="refresh-btn">
-                        <span class="icon">🔄</span>
-                        <span class="text">刷新数据</span>
-                    </button>
-                </div>
-            </div>
-            <div class="update-info">
-                <span class="pulse-dot"></span>
-                <span id="updateTime">正在加载最新数据...</span>
+            <h1>🚀 代理IP优选中心</h1>
+            <div class="header-buttons">
+                <button onclick="location.reload()">🔄 刷新</button>
             </div>
         </div>
 
-        <!-- 快捷操作 -->
-        <div class="quick-actions">
-            <div class="quick-action-item" onclick="addToBookmarks()">
-                <div class="quick-icon">🔖</div>
-                <div class="quick-text">
-                    <div class="quick-title">收藏本站</div>
-                    <div class="quick-desc">快速访问本站</div>
-                </div>
+        <!-- 统计 -->
+        <div class="stats">
+            <div class="stat-item">
+                <span class="label">总代理数</span>
+                <span class="value" id="totalCount">0</span>
             </div>
-            <div class="quick-action-item" onclick="copyCurrentUrl()">
-                <div class="quick-icon">🔗</div>
-                <div class="quick-text">
-                    <div class="quick-title">分享链接</div>
-                    <div class="quick-desc">复制网址分享</div>
-                </div>
+            <div class="stat-item">
+                <span class="label">筛选结果</span>
+                <span class="value" id="filteredCount">0</span>
             </div>
-            <div class="quick-action-item" onclick="openFavorites()">
-                <div class="quick-icon">⭐</div>
-                <div class="quick-text">
-                    <div class="quick-title">我的收藏</div>
-                    <div class="quick-desc">查看收藏代理</div>
-                </div>
+            <div class="stat-item">
+                <span class="label">国家数量</span>
+                <span class="value" id="countryCount">0</span>
             </div>
-            <div class="quick-action-item" onclick="resetFilters()">
-                <div class="quick-icon">🔄</div>
-                <div class="quick-text">
-                    <div class="quick-title">重置筛选</div>
-                    <div class="quick-desc">清空筛选条件</div>
-                </div>
+            <div class="stat-item">
+                <span class="label">端口数量</span>
+                <span class="value" id="portCount">0</span>
             </div>
         </div>
 
-        <!-- 数据统计 -->
-        <div class="stats-panel">
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-info">
-                    <span class="stat-label">可用代理</span>
-                    <span class="stat-value" id="totalCount">加载中</span>
-                    <span class="stat-trend">实时更新</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">✅</div>
-                <div class="stat-info">
-                    <span class="stat-label">筛选结果</span>
-                    <span class="stat-value" id="filteredCount">-</span>
-                    <span class="stat-trend" id="filterTrend">等待筛选</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🌍</div>
-                <div class="stat-info">
-                    <span class="stat-label">覆盖国家</span>
-                    <span class="stat-value" id="countryCount">-</span>
-                    <span class="stat-trend">全球覆盖</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🔌</div>
-                <div class="stat-info">
-                    <span class="stat-label">端口类型</span>
-                    <span class="stat-value" id="portCount">-</span>
-                    <span class="stat-trend">多端口</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 筛选面板 -->
-        <div class="controls-panel">
-            <div class="controls-header">
-                <h2>🔍 智能筛选器</h2>
-                <div class="controls-actions">
-                    <button onclick="saveFilter()" class="save-filter-btn">💾 保存方案</button>
-                    <button onclick="loadFilter()" class="load-filter-btn">📂 加载方案</button>
-                    <button onclick="resetFilters()" class="reset-btn">↺ 重置</button>
-                </div>
-            </div>
+        <!-- 筛选 -->
+        <div class="filters">
+            <input type="text" id="searchInput" placeholder="搜索 IP、国家或公司...">
             
-            <div class="controls-grid">
-                <div class="control-item">
-                    <label>
-                        <span class="control-icon">🔎</span>
-                        <span class="control-label">搜索代理</span>
-                    </label>
-                    <div class="search-wrapper">
-                        <input type="text" id="searchInput" placeholder="输入 IP、国家名或运营商名称..." class="control-input">
-                        <div class="search-history" id="searchHistory"></div>
-                    </div>
-                </div>
+            <select id="countryFilter">
+                <option value="">全部国家</option>
+            </select>
+            
+            <select id="portFilter">
+                <option value="">全部端口</option>
+            </select>
+            
+            <select id="companyFilter">
+                <option value="">全部公司</option>
+            </select>
+            
+            <button onclick="resetFilters()">重置</button>
+        </div>
 
-                <div class="control-item">
-                    <label>
-                        <span class="control-icon">🌐</span>
-                        <span class="control-label">选择国家</span>
-                    </label>
-                    <select id="countryFilter" class="control-select">
-                        <option value="">🌏 全部国家</option>
-                    </select>
-                </div>
-
-                <div class="control-item">
-                    <label>
-                        <span class="control-icon">🔌</span>
-                        <span class="control-label">端口号</span>
-                    </label>
-                    <select id="portFilter" class="control-select">
-                        <option value="">🔌 全部端口</option>
-                    </select>
-                </div>
-
-                <div class="control-item">
-                    <label>
-                        <span class="control-icon">🏢</span>
-                        <span class="control-label">运营商</span>
-                    </label>
-                    <select id="companyFilter" class="control-select">
-                        <option value="">🏢 全部运营商</option>
-                    </select>
-                </div>
-
-                <div class="control-item">
-                    <label>
-                        <span class="control-icon">🎚️</span>
-                        <span class="control-label">排序方式</span>
-                    </label>
-                    <select id="sortFilter" class="control-select">
-                        <option value="default">📋 默认排序</option>
-                        <option value="ip-asc">🔼 IP地址 (升序)</option>
-                        <option value="ip-desc">🔽 IP地址 (降序)</option>
-                        <option value="port-asc">🔼 端口号 (升序)</option>
-                        <option value="port-desc">🔽 端口号 (降序)</option>
-                        <option value="country-asc">🔤 国家名 (A-Z)</option>
-                        <option value="country-desc">🔤 国家名 (Z-A)</option>
-                    </select>
-                </div>
-
-                <div class="control-item">
-                    <label>
-                        <span class="control-icon">📏</span>
-                        <span class="control-label">每页条数</span>
-                    </label>
-                    <select id="pageSizeFilter" class="control-select" onchange="changePageSize()">
-                        <option value="25">25 条/页</option>
-                        <option value="50" selected>50 条/页 (推荐)</option>
-                        <option value="100">100 条/页</option>
-                        <option value="200">200 条/页</option>
-                    </select>
-                </div>
+        <!-- 表格 -->
+        <div class="table-container">
+            <div class="table-actions">
+                <button onclick="selectAll()">全选</button>
+                <button onclick="copySelected()">复制选中</button>
             </div>
 
-            <!-- 快速标签 -->
-            <div class="quick-filters" id="quickFilters">
-                <span class="quick-filter-label">🔥 热门筛选：</span>
+            <div id="loading">正在加载数据...</div>
+
+            <table id="dataTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th width="50"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+                        <th>IP地址</th>
+                        <th>端口</th>
+                        <th>国家</th>
+                        <th>公司</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+
+            <div id="noData" style="display:none;">
+                <p>没有找到匹配的数据</p>
             </div>
         </div>
 
-        <!-- 代理列表 -->
-        <div class="table-section">
-            <div class="table-header">
-                <h2>📋 代理列表</h2>
-                <div class="table-actions">
-                    <button onclick="selectAll()" class="action-btn">
-                        <span class="icon">☑️</span> 全选
-                    </button>
-                    <button onclick="copySelected()" class="action-btn">
-                        <span class="icon">📋</span> 复制选中
-                    </button>
-                    <button onclick="addToFavorites()" class="action-btn">
-                        <span class="icon">⭐</span> 收藏选中
-                    </button>
-                </div>
-            </div>
-
-            <!-- 加载提示 -->
-            <div id="loadingMessage" class="loading-container">
-                <div class="loading-spinner"></div>
-                <p class="loading-text">正在加载代理数据...</p>
-                <p class="loading-subtext">请稍候，首次加载可能需要几秒钟</p>
-            </div>
-
-            <!-- 数据表格 -->
-            <div class="table-wrapper">
-                <table id="proxyTable" style="display: none;">
-                    <thead>
-                        <tr>
-                            <th class="col-checkbox">
-                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
-                            </th>
-                            <th class="col-star">⭐</th>
-                            <th class="col-ip">IP 地址</th>
-                            <th class="col-port">端口</th>
-                            <th class="col-country">国家/地区</th>
-                            <th class="col-company">运营商</th>
-                            <th class="col-actions">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="proxyTableBody"></tbody>
-                </table>
-
-                <!-- 无数据提示 -->
-                <div id="noDataMessage" class="no-data-container" style="display: none;">
-                    <div class="no-data-icon">🔍</div>
-                    <h3>没有找到匹配的代理</h3>
-                    <p>试试调整筛选条件或重置所有筛选</p>
-                    <button onclick="resetFilters()" class="no-data-btn">🔄 重置筛选</button>
-                </div>
-            </div>
-
-            <!-- 分页 -->
-            <div id="paginationContainer" class="pagination" style="display: none;">
-                <button onclick="firstPage()" id="firstBtn" class="page-btn">⏮️ 首页</button>
-                <button onclick="prevPage()" id="prevBtn" class="page-btn">← 上一页</button>
-                <span class="page-info">
-                    第 <input type="number" id="pageInput" min="1" value="1" onchange="goToPage()"> 页 / 
-                    共 <span id="totalPages">1</span> 页
-                    （<span id="rangeStart">1</span>-<span id="rangeEnd">50</span> / 
-                    共 <span id="totalItems">0</span> 条）
-                </span>
-                <button onclick="nextPage()" id="nextBtn" class="page-btn">下一页 →</button>
-                <button onclick="lastPage()" id="lastBtn" class="page-btn">末页 ⏭️</button>
-            </div>
+        <!-- 分页 -->
+        <div id="pagination" class="pagination" style="display:none;">
+            <button onclick="prevPage()" id="prevBtn">上一页</button>
+            <span>第 <span id="currentPage">1</span> 页 / 共 <span id="totalPages">1</span> 页</span>
+            <button onclick="nextPage()" id="nextBtn">下一页</button>
         </div>
     </div>
 
-    <!-- 收藏夹弹窗 -->
-    <div id="favoritesModal" class="modal" style="display: none;">
-        <div class="modal-overlay" onclick="closeFavorites()"></div>
-        <div class="modal-content large-modal">
-            <div class="modal-header">
-                <h3>⭐ 我的收藏夹</h3>
-                <button class="modal-close" onclick="closeFavorites()">&times;</button>
-            </div>
-            <div class="modal-content-body">
-                <div id="favoritesList" class="favorites-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 快捷键提示 -->
-    <div class="keyboard-hints" id="keyboardHints">
-        <div class="hint-title">⌨️ 快捷键提示</div>
-        <div class="hint-item"><kbd>Ctrl</kbd> + <kbd>F</kbd> 快速搜索</div>
-        <div class="hint-item"><kbd>Ctrl</kbd> + <kbd>A</kbd> 全选代理</div>
-        <div class="hint-item"><kbd>Ctrl</kbd> + <kbd>C</kbd> 复制选中</div>
-        <div class="hint-item"><kbd>Esc</kbd> 关闭弹窗</div>
-        <div class="hint-item"><kbd>?</kbd> 显示/隐藏此帮助</div>
-    </div>
-
-    <!-- JS 文件 -->
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/app.js"></script>
