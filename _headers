@@ -1,14 +1,24 @@
 /*
-  Cache-Control: public, max-age=0, must-revalidate
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://raw.githubusercontent.com; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Cache-Control: public, max-age=3600, must-revalidate
 
-/*.html
-  Cache-Control: public, max-age=0, must-revalidate
-
-/*.css
+/*.txt
   Cache-Control: public, max-age=300, must-revalidate
+  Content-Type: text/plain; charset=utf-8
 
 /*.js
-  Cache-Control: public, max-age=300, must-revalidate
+  Cache-Control: public, max-age=86400
+  Content-Type: application/javascript; charset=utf-8
 
-/Data/*
-  Cache-Control: public, max-age=60, must-revalidate
+/*.css
+  Cache-Control: public, max-age=86400
+  Content-Type: text/css; charset=utf-8
+
+/*.html
+  Cache-Control: public, max-age=3600, must-revalidate
+  Content-Type: text/html; charset=utf-8
