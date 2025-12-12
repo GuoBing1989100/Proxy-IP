@@ -13,7 +13,7 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
     
-    <link rel="stylesheet" href="css/style.css?v=20251212-003">
+    <link rel="stylesheet" href="css/style.css?v=20251212-004">
 </head>
 <body data-theme="dark">
     <!-- 背景动画 -->
@@ -31,7 +31,7 @@
                     <span class="logo-icon">🚀</span>
                     <div class="logo-text">
                         <h1>代理IP优选中心</h1>
-                        <p class="subtitle">智能筛选 · 一键测速 · 实时更新</p>
+                        <p class="subtitle">智能筛选 · 实时更新 · 全球覆盖</p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -48,10 +48,6 @@
                         <span class="icon">🔄</span>
                         <span class="text">刷新</span>
                     </button>
-                    <button onclick="exportData()" class="export-btn" title="导出数据">
-                        <span class="icon">📥</span>
-                        <span class="text">导出</span>
-                    </button>
                 </div>
             </div>
             
@@ -64,32 +60,32 @@
 
         <!-- 快捷操作栏 -->
         <div class="quick-actions">
-            <div class="quick-action-item" onclick="recommendFastest()">
-                <div class="quick-icon">⚡</div>
+            <div class="quick-action-item" onclick="addToBookmarks()">
+                <div class="quick-icon">🔖</div>
                 <div class="quick-text">
-                    <div class="quick-title">智能推荐</div>
-                    <div class="quick-desc">推荐最佳代理</div>
+                    <div class="quick-title">收藏网站</div>
+                    <div class="quick-desc">添加到浏览器收藏</div>
                 </div>
             </div>
-            <div class="quick-action-item" onclick="showPopularCountries()">
-                <div class="quick-icon">🔥</div>
+            <div class="quick-action-item" onclick="copyCurrentUrl()">
+                <div class="quick-icon">🔗</div>
                 <div class="quick-text">
-                    <div class="quick-title">热门国家</div>
-                    <div class="quick-desc">查看热门代理</div>
+                    <div class="quick-title">复制链接</div>
+                    <div class="quick-desc">分享给朋友</div>
                 </div>
             </div>
-            <div class="quick-action-item" onclick="testSpeed()">
-                <div class="quick-icon">🎯</div>
+            <div class="quick-action-item" onclick="openFavorites()">
+                <div class="quick-icon">⭐</div>
                 <div class="quick-text">
-                    <div class="quick-title">批量测速</div>
-                    <div class="quick-desc">测试代理速度</div>
+                    <div class="quick-title">我的收藏</div>
+                    <div class="quick-desc">查看收藏的代理</div>
                 </div>
             </div>
-            <div class="quick-action-item" onclick="showStats()">
-                <div class="quick-icon">📊</div>
+            <div class="quick-action-item" onclick="resetFilters()">
+                <div class="quick-icon">🔄</div>
                 <div class="quick-text">
-                    <div class="quick-title">数据统计</div>
-                    <div class="quick-desc">可视化分析</div>
+                    <div class="quick-title">重置筛选</div>
+                    <div class="quick-desc">清空所有条件</div>
                 </div>
             </div>
         </div>
@@ -239,9 +235,6 @@
                     <button onclick="addToFavorites()" class="action-btn">
                         <span class="icon">⭐</span> 添加收藏
                     </button>
-                    <button onclick="testSelected()" class="action-btn">
-                        <span class="icon">🎯</span> 测试选中
-                    </button>
                 </div>
             </div>
 
@@ -263,7 +256,6 @@
                             <th class="col-port">端口</th>
                             <th class="col-country">国家</th>
                             <th class="col-company">运营商/公司</th>
-                            <th class="col-speed">速度</th>
                             <th class="col-actions">操作</th>
                         </tr>
                     </thead>
@@ -309,29 +301,6 @@
         </div>
     </div>
 
-    <!-- 统计图表弹窗 -->
-    <div id="statsModal" class="modal" style="display: none;">
-        <div class="modal-overlay" onclick="closeStats()"></div>
-        <div class="modal-content large-modal">
-            <div class="modal-header">
-                <h3>📊 数据统计分析</h3>
-                <button class="modal-close" onclick="closeStats()">&times;</button>
-            </div>
-            <div class="modal-content-body">
-                <div class="stats-charts">
-                    <div class="chart-container">
-                        <h4>国家分布 TOP 10</h4>
-                        <div id="countryChart" class="chart"></div>
-                    </div>
-                    <div class="chart-container">
-                        <h4>端口使用统计</h4>
-                        <div id="portChart" class="chart"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 快捷键提示 -->
     <div class="keyboard-hints" id="keyboardHints">
         <div class="hint-title">⌨️ 快捷键</div>
@@ -343,8 +312,8 @@
     </div>
 
     <!-- 按顺序加载 JS 文件 -->
-    <script src="js/config.js?v=20251212-003"></script>
-    <script src="js/utils.js?v=20251212-003"></script>
-    <script src="js/app.js?v=20251212-003"></script>
+    <script src="js/config.js?v=20251212-004"></script>
+    <script src="js/utils.js?v=20251212-004"></script>
+    <script src="js/app.js?v=20251212-004"></script>
 </body>
 </html>
