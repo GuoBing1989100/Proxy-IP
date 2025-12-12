@@ -183,6 +183,7 @@
             display: flex;
             gap: 1rem;
             margin-top: 1.5rem;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -204,7 +205,7 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
         }
@@ -212,6 +213,17 @@
         .btn-secondary:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .btn-copy-all {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border: none;
+            font-weight: 700;
+        }
+
+        .btn-copy-all:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
         }
 
         /* 表格样式 */
@@ -454,6 +466,19 @@
             color: rgba(255, 255, 255, 0.6);
             margin-top: 0.5rem;
         }
+
+        /* 当前筛选信息 */
+        .current-filter {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .current-filter strong {
+            color: #f093fb;
+        }
     </style>
     <!-- 引入国家映射文件 -->
     <script src="countryMap.js"></script>
@@ -520,7 +545,18 @@
 
         <!-- 数据表格 -->
         <div class="glass-card">
-            <h2 style="margin-bottom: 1.5rem; font-size: 1.5rem;">📊 代理列表</h2>
+            <!-- 当前筛选信息 -->
+            <div id="currentFilterInfo" class="current-filter" style="display: none;">
+                当前筛选: <strong id="currentCountry"></strong> 共 <strong id="currentCount">0</strong> 条代理
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.5rem; margin: 0;">📊 代理列表</h2>
+                <button class="btn btn-copy-all" id="copyAllBtn" onclick="copyAllProxies()" style="display: none;">
+                    📋 全部复制当前国家
+                </button>
+            </div>
+            
             <div class="table-wrapper">
                 <table id="proxyTable">
                     <thead>
@@ -558,6 +594,7 @@
         let allData = [];
         let filteredData = [];
         let lastUpdateTime = null;
+        let currentCountryFilter = '';
 
         // 分页相关
         let currentPage = 1;
@@ -576,7 +613,7 @@
         }
 
         // 显示Toast提示
-        function showToast(message, duration = 2000) {
+        function showToast(message, duration = 3000) {
             const toast = document.createElement('div');
             toast.className = 'toast';
             toast.textContent = message;
@@ -595,13 +632,46 @@
             }
         }
 
+        // 复制所有当前国家代理
+        function copyAllProxies() {
+            if (filteredData.length === 0 || !currentCountryFilter) {
+                showToast('❌ 没有可复制的数据');
+                return;
+            }
+
+            const proxyList = filteredData.map(item => `${item.ip}:${item.port}`).join('\n');
+            navigator.clipboard.writeText(proxyList).then(() => {
+                showToast(`✅ 已复制 ${filteredData.length} 条 ${currentCountryFilter} 代理到剪贴板！`);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                showToast('❌ 复制失败，请重试');
+            });
+        }
+
+        // 更新复制按钮和筛选信息显示
+        function updateCopyButton() {
+            const copyBtn = document.getElementById('copyAllBtn');
+            const filterInfo = document.getElementById('currentFilterInfo');
+            const currentCountryEl = document.getElementById('currentCountry');
+            const currentCountEl = document.getElementById('currentCount');
+
+            if (currentCountryFilter && filteredData.length > 0) {
+                copyBtn.style.display = 'flex';
+                filterInfo.style.display = 'block';
+                currentCountryEl.textContent = currentCountryFilter;
+                currentCountEl.textContent = filteredData.length.toLocaleString();
+            } else {
+                copyBtn.style.display = 'none';
+                filterInfo.style.display = 'none';
+            }
+        }
+
         // 加载数据
         async function loadData() {
             try {
                 console.log('🔄 开始加载数据...');
                 const timestamp = new Date().getTime();
                 
-                // 直接读取同目录下的 alive.txt
                 const response = await fetch(`alive.txt?t=${timestamp}`);
                 
                 if (!response.ok) {
@@ -610,15 +680,12 @@
                 
                 const text = await response.text();
                 
-                // 检查是否读取到了 HTML 而不是数据
                 if (text.includes('<!DOCTYPE') || text.includes('<html')) {
                     throw new Error('读取到了HTML文件，而不是数据文件！');
                 }
                 
                 console.log('📄 数据长度:', text.length, '字符');
-                console.log('📄 前100个字符:', text.substring(0, 100));
                 
-                // 解析数据
                 const lines = text.trim().split('\n');
                 console.log('📊 总行数:', lines.length);
                 
@@ -637,7 +704,6 @@
                         const countryCode = parts[2].trim();
                         const company = parts.length > 3 ? parts.slice(3).join(',').trim() : 'Unknown';
                         
-                        // 使用映射表转换国家代码
                         const country = countryNames[countryCode] || countryCode;
                         
                         return { ip, port, countryCode, country, company };
@@ -645,15 +711,16 @@
                     .filter(item => item !== null);
                 
                 console.log('✅ 成功解析', allData.length, '条数据');
-                console.log('📝 示例数据:', allData.slice(0, 3));
                 
                 filteredData = [...allData];
                 currentPage = 1;
+                currentCountryFilter = '';
                 lastUpdateTime = new Date();
                 updateStats();
                 populateCountryFilter();
                 renderTable();
                 renderPagination();
+                updateCopyButton();
                 updateTimeDisplay();
                 
             } catch (error) {
@@ -719,16 +786,19 @@
             const port = document.getElementById('portFilter').value.trim();
             const company = document.getElementById('companyFilter').value.trim().toLowerCase();
 
+            currentCountryFilter = country;
+
             filteredData = allData.filter(item => {
                 return (!country || item.country === country) &&
                        (!port || item.port.includes(port)) &&
                        (!company || item.company.toLowerCase().includes(company));
             });
 
-            currentPage = 1; // 筛选后回到第一页
+            currentPage = 1;
             updateStats();
             renderTable();
             renderPagination();
+            updateCopyButton();
         }
 
         // 重置筛选
@@ -738,9 +808,11 @@
             document.getElementById('companyFilter').value = '';
             filteredData = [...allData];
             currentPage = 1;
+            currentCountryFilter = '';
             updateStats();
             renderTable();
             renderPagination();
+            updateCopyButton();
             showToast('🔄 筛选已重置');
         }
 
@@ -764,7 +836,6 @@
             const displayData = filteredData.slice(startIndex, endIndex);
 
             const rows = displayData.map(item => {
-                // 转义特殊字符防止XSS
                 const safeIP = item.ip.replace(/'/g, "\\'");
                 const safePort = item.port.replace(/'/g, "\\'");
                 
@@ -786,7 +857,6 @@
 
             tbody.innerHTML = rows;
 
-            // 更新分页信息
             const info = `第 ${currentPage} / ${totalPages} 页，每页 ${pageSize} 条，共 ${total} 条`;
             document.getElementById('paginationInfo').textContent = info;
         }
@@ -800,7 +870,6 @@
 
             const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
-            // 上一页
             const prevBtn = document.createElement('button');
             prevBtn.textContent = '«';
             prevBtn.disabled = currentPage === 1;
@@ -813,7 +882,6 @@
             };
             container.appendChild(prevBtn);
 
-            // 页码按钮（简单版：最多显示 7 个）
             const maxButtons = 7;
             let start = Math.max(1, currentPage - 3);
             let end = Math.min(totalPages, start + maxButtons - 1);
@@ -835,7 +903,6 @@
                 container.appendChild(btn);
             }
 
-            // 下一页
             const nextBtn = document.createElement('button');
             nextBtn.textContent = '»';
             nextBtn.disabled = currentPage === totalPages;
@@ -882,7 +949,7 @@
                 }
             });
             
-            currentPage = 1; // 排序后回到第一页
+            currentPage = 1;
             renderTable();
             renderPagination();
         }
@@ -894,6 +961,12 @@
         // 实时筛选
         ['countryFilter', 'portFilter', 'companyFilter'].forEach(id => {
             document.getElementById(id).addEventListener('input', applyFilters);
+        });
+
+        // 监听国家筛选器变化
+        document.getElementById('countryFilter').addEventListener('change', function() {
+            currentCountryFilter = this.value;
+            applyFilters();
         });
     </script>
 </body>
