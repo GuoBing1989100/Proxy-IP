@@ -621,7 +621,7 @@
             try {
                 // 添加时间戳防止缓存
                 const timestamp = new Date().getTime();
-                const response = await fetch(`Data/alive.txt?t=${timestamp}`);
+                const response = await fetch(`../Data/alive.txt?t=${timestamp}`);
                 const text = await response.text();
                 
                 allData = text.trim().split('\n').map(line => {
