@@ -625,14 +625,20 @@
                 const text = await response.text();
                 
                 allData = text.trim().split('\n').map(line => {
-                    const [ip, port, countryCode, company] = line.split(',');
-                    return { 
-                        ip, 
-                        port, 
-                        countryCode,
-                        country: countryNames[countryCode] || countryCode,
-                        company: company ? company.trim() : 'Unknown'
-                    };
+                const parts = line.split(',');
+                const ip = parts[0];
+                const port = parts[1];
+                const countryCode = parts[2];
+                    // 将剩余部分合并为公司名（处理公司名中包含逗号的情况）
+                const company = parts.slice(3).join(',').trim() || 'Unknown';
+    
+                return { 
+                ip, 
+                port, 
+                countryCode,
+                country: countryNames[countryCode] || countryCode, // 如果找不到映射，显示原代码
+                company
+                };
                 });
                 
                 filteredData = [...allData];
