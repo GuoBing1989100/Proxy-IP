@@ -3,7 +3,7 @@ name: Rust CF Scan
 on:
   workflow_dispatch: # 可以手动触发
   schedule:
-    - cron: '0 */6 * * *'  # 每 6 小时运行一次 (00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 0 * * *'  # 每天 00:00 UTC 运行一次
 
 jobs:
   update-proxies:
