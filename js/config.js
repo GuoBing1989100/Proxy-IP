@@ -67,9 +67,65 @@ const countryNames = {
 
 // 配置选项
 const config = {
-    // 数据源URL - Cloudflare Pages会从同域名下读取
+    // 数据源URL
     dataUrl: './Data/alive.txt',
+    fallbackDataUrl: 'https://raw.githubusercontent.com/GuoBing1989100/Proxy-IP/refs/heads/main/Data/alive.txt',
     
-    // 如果部署后Data文件夹不在根目录，使用GitHub Raw URL作为备选
-    fallbackDataUrl: 'https://raw.githubusercontent.com/GuoBing1989100/Proxy-IP/refs/heads/main/Data/alive.txt'
+    // IP查询API配置（多个备选API）
+    ipApis: [
+        {
+            name: 'ip-api.com',
+            url: 'http://ip-api.com/json/{ip}?lang=zh-CN',
+            parse: (data) => ({
+                ip: data.query,
+                country: data.country,
+                countryCode: data.countryCode,
+                region: data.regionName,
+                city: data.city,
+                zip: data.zip,
+                lat: data.lat,
+                lon: data.lon,
+                timezone: data.timezone,
+                isp: data.isp,
+                org: data.org,
+                as: data.as
+            })
+        },
+        {
+            name: 'ipapi.co',
+            url: 'https://ipapi.co/{ip}/json/',
+            parse: (data) => ({
+                ip: data.ip,
+                country: data.country_name,
+                countryCode: data.country_code,
+                region: data.region,
+                city: data.city,
+                zip: data.postal,
+                lat: data.latitude,
+                lon: data.longitude,
+                timezone: data.timezone,
+                isp: data.org,
+                org: data.org,
+                as: data.asn
+            })
+        },
+        {
+            name: 'ipwhois.app',
+            url: 'https://ipwhois.app/json/{ip}?lang=zh-CN',
+            parse: (data) => ({
+                ip: data.ip,
+                country: data.country,
+                countryCode: data.country_code,
+                region: data.region,
+                city: data.city,
+                zip: data.postal,
+                lat: data.latitude,
+                lon: data.longitude,
+                timezone: data.timezone,
+                isp: data.isp,
+                org: data.org,
+                as: data.asn
+            })
+        }
+    ]
 };
