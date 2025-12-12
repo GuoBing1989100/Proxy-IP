@@ -1,6 +1,4 @@
-// 配置文件 - 所有可配置项集中管理
-
-// 国家代码到中文名称的映射配置
+// 国家代码映射（保持不变）
 const countryNames = {
     'AD': '安道尔', 'AE': '阿联酋', 'AF': '阿富汗', 'AG': '安提瓜和巴布达',
     'AI': '安圭拉', 'AL': '阿尔巴尼亚', 'AM': '亚美尼亚', 'AO': '安哥拉',
@@ -69,45 +67,39 @@ const countryNames = {
 
 // 应用配置
 const config = {
-    // 数据源配置
+    // 数据源配置 - 使用相对路径直接读取同仓库的文件
     dataUrl: './Data/alive.txt',
-    fallbackDataUrl: 'https://raw.githubusercontent.com/GuoBing1989100/ProxyIP/refs/heads/main/Data/alive.txt',
+    
+    // 备用数据源（使用 IPPROXY23K.txt）
+    fallbackDataUrl: './IPPROXY23K.txt',
     
     // 性能配置
-    batchSize: 100,                    // 每批渲染的数据量
-    searchDebounceTime: 300,           // 搜索防抖时间（毫秒）
-    maxRetries: 3,                     // 最大重试次数
-    retryDelay: 1000,                  // 初始重试延迟（毫秒）
+    batchSize: 100,
+    searchDebounceTime: 300,
+    maxRetries: 3,
+    retryDelay: 1000,
     
     // UI配置
-    companyMaxLength: 60,              // 公司名称最大显示长度
-    notificationDuration: 3000,        // 通知显示时长（毫秒）
-    copySuccessDuration: 1500,         // 复制成功提示时长（毫秒）
+    companyMaxLength: 60,
+    notificationDuration: 3000,
+    copySuccessDuration: 1500,
     
     // 功能开关
-    enableThemeToggle: true,           // 启用主题切换
-    enableExport: true,                // 启用导出功能
-    enableNetworkMonitor: true,        // 启用网络监控
-    enableInfiniteScroll: true,        // 启用无限滚动
+    enableThemeToggle: true,
+    enableExport: true,
+    enableNetworkMonitor: true,
+    enableInfiniteScroll: true,
     
     // 缓存配置
-    cacheEnabled: true,                // 启用缓存
-    cacheExpiry: 3600000,              // 缓存过期时间（1小时）
-    
-    // 安全配置
-    enableCSP: true,                   // 启用内容安全策略
-    validateData: true,                // 启用数据验证
-    
-    // API配置（预留）
-    apiEndpoint: '',                   // API端点（如需后端支持）
-    apiTimeout: 10000,                 // API超时时间（毫秒）
+    cacheEnabled: true,
+    cacheExpiry: 3600000,
     
     // 调试配置
-    debug: false,                      // 调试模式
-    logLevel: 'info'                   // 日志级别: 'debug', 'info', 'warn', 'error'
+    debug: true,  // 临时开启调试
+    logLevel: 'info'
 };
 
-// 日志工具
+// 其余代码保持不变...
 const logger = {
     debug(...args) {
         if (config.debug && config.logLevel === 'debug') {
@@ -132,7 +124,6 @@ const logger = {
     }
 };
 
-// 环境检测
 const environment = {
     isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
     isSecureContext: window.isSecureContext,
@@ -157,12 +148,7 @@ const environment = {
     })()
 };
 
-// 输出环境信息（仅调试模式）
 if (config.debug) {
-    console.log('环境信息:', environment);
+    console.log('🚀 环境信息:', environment);
+    console.log('📊 配置信息:', config);
 }
-
-// 冻结配置对象，防止运行时修改
-Object.freeze(config);
-Object.freeze(countryNames);
-Object.freeze(environment);
