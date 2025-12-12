@@ -8,14 +8,18 @@
 <body>
   <h1>ProxyIP 列表</h1>
 
-  <div>
-    <label>国家筛选: <input id="countryFilter" placeholder="如 AE"></label>
+  <div class="filters">
+    <label>国家筛选: 
+      <select id="countryFilter">
+        <option value="">全部</option>
+      </select>
+    </label>
     <label>公司筛选: <input id="companyFilter" placeholder="如 Private Customer"></label>
     <label>搜索 IP: <input id="ipFilter" placeholder="如 85.237.211.59"></label>
     <button onclick="loadData()">筛选</button>
   </div>
 
-  <table border="1" id="ipTable">
+  <table id="ipTable">
     <thead>
       <tr><th>IP</th><th>Port</th><th>Country</th><th>Company</th></tr>
     </thead>
