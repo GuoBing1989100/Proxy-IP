@@ -56,10 +56,6 @@ class ProxyApp {
         const countrySelect = document.getElementById('countryFilter');
         const companySelect = document.getElementById('companyFilter');
 
-        // 清空现有选项（保留第一个"全部"选项）
-        countrySelect.innerHTML = '<option value="">全部国家</option>';
-        companySelect.innerHTML = '<option value="">全部公司</option>';
-
         // 添加国家选项
         countries.forEach(country => {
             const option = document.createElement('option');
@@ -68,16 +64,13 @@ class ProxyApp {
             countrySelect.appendChild(option);
         });
 
-        // 添加公司选项
-        companies.forEach(company => {
+        // 添加公司选项（只显示前100个，避免下拉框过长）
+        companies.slice(0, 100).forEach(company => {
             const option = document.createElement('option');
             option.value = company;
-            option.textContent = company.length > 50 ? company.substring(0, 50) + '...' : company;
-            option.title = company; // 完整名称作为提示
+            option.textContent = company.length > 40 ? company.substring(0, 40) + '...' : company;
             companySelect.appendChild(option);
         });
-
-        console.log(`已加载 ${countries.length} 个国家，${companies.length} 个公司`);
     }
 
     /**
@@ -105,7 +98,7 @@ class ProxyApp {
         displayProxies.forEach(proxy => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><span class="ip-clickable" onclick="showIPDetails('${proxy.ip}')">${proxy.ip}</span></td>
+                <td>${proxy.ip}</td>
                 <td>${proxy.port}</td>
                 <td>${proxy.countryName}</td>
                 <td title="${proxy.company}">${proxy.company.length > 50 ? proxy.company.substring(0, 50) + '...' : proxy.company}</td>
@@ -141,29 +134,21 @@ class ProxyApp {
      * 应用筛选条件
      */
     applyFilters() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-        const countryFilter = document.getElementById('countryFilter').value.trim();
-        const companyFilter = document.getElementById('companyFilter').value.trim();
-
-        console.log('筛选条件:', { searchTerm, countryFilter, companyFilter });
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const countryFilter = document.getElementById('countryFilter').value;
+        const companyFilter = document.getElementById('companyFilter').value;
 
         this.filteredProxies = this.allProxies.filter(proxy => {
-            // 搜索匹配
             const matchesSearch = !searchTerm || 
                 proxy.ip.toLowerCase().includes(searchTerm) ||
                 proxy.countryName.toLowerCase().includes(searchTerm) ||
                 proxy.company.toLowerCase().includes(searchTerm);
             
-            // 国家匹配
             const matchesCountry = !countryFilter || proxy.countryName === countryFilter;
-            
-            // 公司匹配（精确匹配）
             const matchesCompany = !companyFilter || proxy.company === companyFilter;
 
             return matchesSearch && matchesCountry && matchesCompany;
         });
-
-        console.log(`筛选结果: ${this.filteredProxies.length} 条记录`);
 
         this.renderTable();
         this.updateStats();
