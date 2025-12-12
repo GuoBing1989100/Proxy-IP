@@ -97,7 +97,6 @@ h1 {
     background-clip: text;
     margin-bottom: 10px;
     font-weight: 700;
-    text-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
 }
 
 .subtitle {
@@ -119,7 +118,7 @@ h1 {
 
 .control-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
 }
 
@@ -137,7 +136,7 @@ h1 {
     letter-spacing: 1px;
 }
 
-input, select {
+select {
     width: 100%;
     padding: 14px 20px;
     background: rgba(10, 14, 39, 0.8);
@@ -147,22 +146,25 @@ input, select {
     font-size: 1em;
     transition: all 0.3s ease;
     outline: none;
+    cursor: pointer;
 }
 
-input:focus, select:focus {
+select:focus {
     border-color: var(--accent-cyan);
     box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
     transform: translateY(-2px);
 }
 
-input::placeholder {
-    color: var(--text-secondary);
+select option {
+    background: #141b3d;
+    color: var(--text-primary);
+    padding: 10px;
 }
 
 /* 统计卡片 */
 .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -250,6 +252,7 @@ th {
     letter-spacing: 1px;
     font-size: 0.85em;
     border-bottom: 2px solid var(--accent-cyan);
+    white-space: nowrap;
 }
 
 tbody tr {
@@ -259,7 +262,7 @@ tbody tr {
 
 tbody tr:hover {
     background: rgba(0, 245, 255, 0.05);
-    transform: scale(1.01);
+    transform: scale(1.005);
 }
 
 td {
@@ -271,18 +274,25 @@ td {
     font-family: 'Courier New', monospace;
     color: var(--accent-cyan);
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .port-cell {
     font-family: 'Courier New', monospace;
     color: var(--accent-purple);
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .country-cell {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    white-space: nowrap;
+}
+
+.company-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 复制按钮 */
@@ -300,6 +310,7 @@ td {
     letter-spacing: 0.5px;
     position: relative;
     overflow: hidden;
+    white-space: nowrap;
 }
 
 .copy-btn::before {
@@ -335,6 +346,11 @@ td {
     padding: 60px 20px;
     color: var(--text-secondary);
     font-size: 1.2em;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glow);
 }
 
 .loading-spinner {
@@ -379,6 +395,10 @@ footer a:hover {
         grid-template-columns: 1fr;
     }
 
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
     h1 {
         font-size: 2em;
     }
@@ -397,6 +417,10 @@ footer a:hover {
         padding: 20px 15px;
     }
 
+    h1 {
+        font-size: 1.5em;
+    }
+
     th, td {
         padding: 12px 10px;
         font-size: 0.9em;
@@ -409,6 +433,10 @@ footer a:hover {
 
     .table-container {
         max-height: 600px;
+    }
+
+    .company-cell {
+        max-width: 150px;
     }
 }
 
