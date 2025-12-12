@@ -550,14 +550,22 @@
             try {
                 console.log('🔄 开始加载数据...');
                 const timestamp = new Date().getTime();
-                const response = await fetch(`../Data/alive.txt?t=${timestamp}`);
+                
+                // 直接读取同目录下的 alive.txt
+                const response = await fetch(`alive.txt?t=${timestamp}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
                 const text = await response.text();
-                console.log('📄 原始数据长度:', text.length, '字符');
+                
+                // 检查是否读取到了 HTML 而不是数据
+                if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+                    throw new Error('读取到了HTML文件，而不是数据文件！');
+                }
+                
+                console.log('📄 数据长度:', text.length, '字符');
                 console.log('📄 前100个字符:', text.substring(0, 100));
                 
                 // 解析数据
@@ -600,8 +608,9 @@
                 console.error('❌ 加载失败:', error);
                 document.getElementById('tableBody').innerHTML = 
                     `<tr><td colspan="5" style="text-align: center; color: #ff6b6b;">
-                        数据加载失败: ${error.message}<br>
-                        <small>请按F12查看详细错误</small>
+                        <strong>❌ 数据加载失败: ${error.message}</strong><br><br>
+                        <small>请确认 alive.txt 文件在 Data 文件夹内</small><br>
+                        <small>按 F12 查看控制台详细信息</small>
                     </td></tr>`;
                 showToast('❌ 数据加载失败');
             }
