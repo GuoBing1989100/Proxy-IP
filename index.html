@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代理IP优选 - Proxy IP Selector</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 代理IP优选中心</h1>
+            <p>自动更新的优质代理IP列表 - 实时数据来自 GitHub</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>🔍 搜索</label>
+                <input type="text" id="searchInput" placeholder="搜索 IP、国家或公司...">
+            </div>
+            <div class="control-group">
+                <label>🌍 国家筛选</label>
+                <select id="countryFilter">
+                    <option value="">全部国家</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>🏢 公司筛选</label>
+                <select id="companyFilter">
+                    <option value="">全部公司</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">总代理数</span>
+                <span class="stat-value" id="totalCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">显示结果</span>
+                <span class="stat-value" id="filteredCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">国家数量</span>
+                <span class="stat-value" id="countryCount">0</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div id="loadingMessage" class="loading">正在加载代理数据</div>
+            <table id="proxyTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>IP地址</th>
+                        <th>端口</th>
+                        <th>国家</th>
+                        <th>运营商/公司</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="proxyTableBody">
+                </tbody>
+            </table>
+            <div id="noDataMessage" class="no-data" style="display: none;">
+                没有找到匹配的代理数据
+            </div>
+        </div>
+    </div>
+
+    <!-- 按顺序加载 JS 文件 -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
