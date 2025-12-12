@@ -5,8 +5,6 @@ class ProxyApp {
         this.filteredProxies = [];
         this.displayedCount = 0;
         this.batchSize = 100;
-        this.observer = null;
-        this.searchTimeout = null;
         this.init();
     }
 
@@ -17,7 +15,7 @@ class ProxyApp {
     }
 
     /**
-     * 从服务器加载代理数据（带重试机制）
+     * 从服务器加载代理数据
      */
     async loadProxyData() {
         const maxRetries = 3;
@@ -27,10 +25,8 @@ class ProxyApp {
             try {
                 this.showProgress(true);
                 
-                // 首先尝试从主数据源加载
                 let response = await fetch(config.dataUrl);
                 
-                // 如果主数据源失败，使用备用数据源
                 if (!response.ok) {
                     console.log('主数据源加载失败，尝试备用数据源...');
                     response = await fetch(config.fallbackDataUrl);
@@ -42,7 +38,6 @@ class ProxyApp {
 
                 const text = await response.text();
                 
-                // 数据完整性检查
                 if (!text || text.trim().length === 0) {
                     throw new Error('数据为空');
                 }
@@ -60,10 +55,10 @@ class ProxyApp {
                 
                 toggleElement('loadingMessage', false);
                 toggleElement('proxyTable', true);
-                document.getElementById('exportBtn').style.display = 'block';
+                document.getElementById('exportBtn').style.display = 'inline-flex';
                 this.showProgress(false);
                 
-                return; // 成功加载，退出重试循环
+                return;
 
             } catch (error) {
                 retryCount++;
@@ -109,13 +104,16 @@ class ProxyApp {
     populateFilters() {
         const countries = [...new Set(this.allProxies.map(p => p.countryName))].sort();
         const companies = [...new Set(this.allProxies.map(p => p.company))].sort();
+        const ports = [...new Set(this.allProxies.map(p => p.port))].sort((a, b) => parseInt(a) - parseInt(b));
 
         const countrySelect = document.getElementById('countryFilter');
         const companySelect = document.getElementById('companyFilter');
+        const portSelect = document.getElementById('portFilter');
 
-        // 保留第一个"全部"选项，清除其他选项
+        // 清空并重建选项
         countrySelect.innerHTML = '<option value="">全部国家</option>';
         companySelect.innerHTML = '<option value="">全部公司</option>';
+        portSelect.innerHTML = '<option value="">全部端口</option>';
 
         // 添加国家选项
         countries.forEach(country => {
@@ -134,7 +132,15 @@ class ProxyApp {
             companySelect.appendChild(option);
         });
 
-        console.log(`已加载 ${countries.length} 个国家，${companies.length} 个公司`);
+        // 添加端口选项
+        ports.forEach(port => {
+            const option = document.createElement('option');
+            option.value = port;
+            option.textContent = port;
+            portSelect.appendChild(option);
+        });
+
+        console.log(`已加载 ${countries.length} 个国家，${companies.length} 个公司，${ports.length} 个端口`);
     }
 
     /**
@@ -168,7 +174,7 @@ class ProxyApp {
         displayProxies.forEach(proxy => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${this.highlightText(proxy.ip)}</td>
+                <td>${proxy.ip}</td>
                 <td>${proxy.port}</td>
                 <td>${proxy.countryName}</td>
                 <td title="${proxy.company}">${this.truncateText(proxy.company, 60)}</td>
@@ -186,24 +192,6 @@ class ProxyApp {
     }
 
     /**
-     * 高亮搜索词
-     */
-    highlightText(text) {
-        const searchTerm = document.getElementById('searchInput').value.trim();
-        if (!searchTerm) return text;
-        
-        const regex = new RegExp(`(${this.escapeRegex(searchTerm)})`, 'gi');
-        return text.replace(regex, '<span class="highlight">$1</span>');
-    }
-
-    /**
-     * 转义正则表达式特殊字符
-     */
-    escapeRegex(str) {
-        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    /**
      * 截断长文本
      */
     truncateText(text, maxLength) {
@@ -214,47 +202,31 @@ class ProxyApp {
      * 设置事件监听器
      */
     setupEventListeners() {
-        const searchInput = document.getElementById('searchInput');
         const countryFilter = document.getElementById('countryFilter');
         const companyFilter = document.getElementById('companyFilter');
+        const portFilter = document.getElementById('portFilter');
         const exportBtn = document.getElementById('exportBtn');
-
-        // 防抖搜索
-        searchInput.addEventListener('input', () => {
-            clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => this.applyFilters(), 300);
-        });
 
         countryFilter.addEventListener('change', () => this.applyFilters());
         companyFilter.addEventListener('change', () => this.applyFilters());
+        portFilter.addEventListener('change', () => this.applyFilters());
         exportBtn.addEventListener('click', () => this.exportToCSV());
-
-        // 键盘快捷键
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                searchInput.focus();
-            }
-        });
     }
 
     /**
      * 应用筛选条件
      */
     applyFilters() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
         const selectedCountry = document.getElementById('countryFilter').value;
         const selectedCompany = document.getElementById('companyFilter').value;
+        const selectedPort = document.getElementById('portFilter').value;
 
         this.filteredProxies = this.allProxies.filter(proxy => {
-            const matchSearch = !searchTerm || 
-                proxy.ip.toLowerCase().includes(searchTerm) || 
-                proxy.company.toLowerCase().includes(searchTerm);
-            
             const matchCountry = !selectedCountry || proxy.countryName === selectedCountry;
             const matchCompany = !selectedCompany || proxy.company === selectedCompany;
+            const matchPort = !selectedPort || proxy.port === selectedPort;
 
-            return matchSearch && matchCountry && matchCompany;
+            return matchCountry && matchCompany && matchPort;
         });
 
         this.renderTable();
@@ -355,5 +327,5 @@ document.addEventListener('DOMContentLoaded', () => {
     app = new ProxyApp();
 });
 
-// 暴露到全局作用域供 HTML 调用
+// 暴露到全局作用域
 window.app = app;
