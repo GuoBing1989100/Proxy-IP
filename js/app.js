@@ -1,4 +1,4 @@
-// 主应用逻辑 - 超级增强版
+// 主应用逻辑 - 最终精简版
 
 class ProxyApp {
     constructor() {
@@ -9,7 +9,6 @@ class ProxyApp {
         this.selectedRows = new Set();
         this.favorites = new Set();
         this.searchHistory = [];
-        this.speedCache = new Map();
         this.sortMethod = 'default';
         this.init();
     }
@@ -80,7 +79,6 @@ class ProxyApp {
             toggleElement('proxyTable', true);
             toggleElement('paginationContainer', true);
             
-            // 显示更新成功
             this.showNotification('✅ 数据加载成功！', 'success');
             
         } catch (error) {
@@ -184,7 +182,6 @@ class ProxyApp {
             const globalIndex = startIndex + index;
             const proxyKey = `${proxy.ip}:${proxy.port}`;
             const isFavorited = this.favorites.has(proxyKey);
-            const speed = this.speedCache.get(proxyKey);
             
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -205,9 +202,6 @@ class ProxyApp {
                 <td class="col-country">${proxy.countryName}</td>
                 <td class="col-company" title="${proxy.company}">
                     ${proxy.company.length > 40 ? proxy.company.substring(0, 40) + '...' : proxy.company}
-                </td>
-                <td class="col-speed">
-                    ${this.getSpeedBadge(speed)}
                 </td>
                 <td class="col-actions">
                     <button class="copy-btn" onclick="app.handleCopy('${proxy.ip}:${proxy.port}', this)" title="复制IP:端口">
@@ -233,19 +227,6 @@ class ProxyApp {
                 this.updateSelectAllCheckbox();
             });
         });
-    }
-
-    getSpeedBadge(speed) {
-        if (!speed) {
-            return '<span class="speed-badge speed-unknown">未测试</span>';
-        }
-        if (speed < 200) {
-            return `<span class="speed-badge speed-fast">${speed}ms</span>`;
-        } else if (speed < 500) {
-            return `<span class="speed-badge speed-medium">${speed}ms</span>`;
-        } else {
-            return `<span class="speed-badge speed-slow">${speed}ms</span>`;
-        }
     }
 
     updatePagination(totalPages, startIndex, endIndex) {
@@ -276,7 +257,7 @@ class ProxyApp {
         // 保存搜索历史
         if (searchTerm && !this.searchHistory.includes(searchTerm)) {
             this.searchHistory.unshift(searchTerm);
-            this.searchHistory = this.searchHistory.slice(0, 10); // 只保留10条
+            this.searchHistory = this.searchHistory.slice(0, 10);
             this.saveLocalData();
         }
 
@@ -331,7 +312,6 @@ class ProxyApp {
                 this.filteredProxies.sort((a, b) => b.countryName.localeCompare(a.countryName));
                 break;
             default:
-                // 默认排序，保持原始顺序
                 break;
         }
     }
@@ -376,7 +356,6 @@ class ProxyApp {
         badge.style.display = this.favorites.size > 0 ? 'block' : 'none';
     }
 
-    // 显示更新时间
     showUpdateTime() {
         const updateTime = document.getElementById('updateTime');
         const now = new Date();
@@ -390,7 +369,6 @@ class ProxyApp {
         });
         updateTime.textContent = `最后更新: ${timeStr}`;
         
-        // 每分钟更新一次
         setInterval(() => {
             const now = new Date();
             const timeStr = now.toLocaleString('zh-CN', { 
@@ -405,7 +383,6 @@ class ProxyApp {
         }, 60000);
     }
 
-    // 动画统计卡片
     animateStats() {
         setTimeout(() => {
             document.querySelectorAll('.stat-card').forEach(card => {
@@ -414,7 +391,6 @@ class ProxyApp {
         }, 100);
     }
 
-    // 显示通知
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
@@ -446,7 +422,6 @@ class ProxyApp {
         const searchInput = document.getElementById('searchInput');
         searchInput.addEventListener('input', debouncedFilter);
         
-        // 搜索框聚焦显示历史
         searchInput.addEventListener('focus', () => {
             this.showSearchHistory();
         });
@@ -459,7 +434,6 @@ class ProxyApp {
             this.renderTable();
         });
 
-        // 点击其他地方隐藏搜索历史
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.search-wrapper')) {
                 document.getElementById('searchHistory').classList.remove('show');
@@ -467,7 +441,6 @@ class ProxyApp {
         });
     }
 
-    // 显示搜索历史
     showSearchHistory() {
         const historyContainer = document.getElementById('searchHistory');
         
@@ -502,22 +475,18 @@ class ProxyApp {
         this.showSearchHistory();
     }
 
-    // 键盘快捷键
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl+F - 聚焦搜索
             if (e.ctrlKey && e.key === 'f') {
                 e.preventDefault();
                 document.getElementById('searchInput').focus();
             }
             
-            // Ctrl+A - 全选
             if (e.ctrlKey && e.key === 'a' && !e.target.matches('input, textarea')) {
                 e.preventDefault();
                 selectAll();
             }
             
-            // Ctrl+C - 复制选中
             if (e.ctrlKey && e.key === 'c' && !e.target.matches('input, textarea')) {
                 if (this.selectedRows.size > 0) {
                     e.preventDefault();
@@ -525,17 +494,18 @@ class ProxyApp {
                 }
             }
             
-            // Esc - 关闭弹窗
             if (e.key === 'Escape') {
                 closeFavorites();
-                closeStats();
             }
             
-            // ? - 显示/隐藏快捷键提示
             if (e.key === '?' && !e.target.matches('input, textarea')) {
                 toggleKeyboardHints();
             }
         });
+    }
+
+    updateThemeIcon(theme) {
+        document.getElementById('themeIcon').textContent = theme === 'dark' ? '🌙' : '☀️';
     }
 }
 
@@ -722,97 +692,6 @@ function closeFavorites() {
     document.getElementById('favoritesModal').style.display = 'none';
 }
 
-// 统计图表
-function showStats() {
-    const modal = document.getElementById('statsModal');
-    modal.style.display = 'flex';
-    
-    // 渲染国家分布图
-    renderCountryChart();
-    
-    // 渲染端口统计图
-    renderPortChart();
-}
-
-function closeStats() {
-    document.getElementById('statsModal').style.display = 'none';
-}
-
-function renderCountryChart() {
-    const countryCount = {};
-    app.allProxies.forEach(proxy => {
-        countryCount[proxy.countryName] = (countryCount[proxy.countryName] || 0) + 1;
-    });
-
-    const sorted = Object.entries(countryCount)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
-
-    const max = sorted[0][1];
-    let html = '';
-
-    sorted.forEach(([country, count]) => {
-        const percentage = (count / max * 100).toFixed(1);
-        html += `
-            <div class="chart-bar">
-                <div class="chart-label">${country}</div>
-                <div class="chart-bar-container">
-                    <div class="chart-bar-fill" style="width: ${percentage}%">
-                        <span class="chart-value">${count}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-
-    document.getElementById('countryChart').innerHTML = html;
-}
-
-function renderPortChart() {
-    const portCount = {};
-    app.allProxies.forEach(proxy => {
-        portCount[proxy.port] = (portCount[proxy.port] || 0) + 1;
-    });
-
-    const sorted = Object.entries(portCount)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
-
-    const max = sorted[0][1];
-    let html = '';
-
-    sorted.forEach(([port, count]) => {
-        const percentage = (count / max * 100).toFixed(1);
-        html += `
-            <div class="chart-bar">
-                <div class="chart-label">端口 ${port}</div>
-                <div class="chart-bar-container">
-                    <div class="chart-bar-fill" style="width: ${percentage}%">
-                        <span class="chart-value">${count}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-
-    document.getElementById('portChart').innerHTML = html;
-}
-
-// 导出数据
-function exportData() {
-    const dataToExport = app.filteredProxies.length > 0 ? app.filteredProxies : app.allProxies;
-    const csv = 'IP地址,端口,国家代码,国家,运营商\n' + 
-        dataToExport.map(p => `${p.ip},${p.port},${p.countryCode},${p.countryName},"${p.company}"`).join('\n');
-    
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `proxy-list-${new Date().toISOString().slice(0,10)}.csv`;
-    link.click();
-    
-    app.showNotification(`✅ 已导出 ${dataToExport.length} 条数据`, 'success');
-}
-
 // 重置筛选
 function resetFilters() {
     document.getElementById('searchInput').value = '';
@@ -867,48 +746,69 @@ function quickFilter(type, value) {
     
     app.applyFilters();
     
-    // 高亮选中的标签
     document.querySelectorAll('.quick-filter-tag').forEach(tag => {
         tag.classList.remove('active');
     });
     event.target.classList.add('active');
 }
 
-// 智能推荐
-function recommendFastest() {
-    app.showNotification('🚀 智能推荐功能开发中...', 'info');
-    // TODO: 实现智能推荐逻辑
-}
-
-// 显示热门国家
-function showPopularCountries() {
-    const countryCount = {};
-    app.allProxies.forEach(proxy => {
-        countryCount[proxy.countryName] = (countryCount[proxy.countryName] || 0) + 1;
-    });
-
-    const popular = Object.entries(countryCount)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([country, count]) => `${country} (${count})`)
-        .join(', ');
-
-    app.showNotification(`🔥 热门国家: ${popular}`, 'info');
-}
-
-// 测试速度
-function testSpeed() {
-    app.showNotification('🎯 批量测速功能开发中...', 'info');
-    // TODO: 实现批量测速逻辑
-}
-
-function testSelected() {
-    if (app.selectedRows.size === 0) {
-        app.showNotification('⚠️ 请先选择要测试的代理', 'warning');
-        return;
+// 收藏网站到浏览器
+function addToBookmarks() {
+    const title = '代理IP优选中心';
+    const url = window.location.href;
+    
+    if (window.sidebar && window.sidebar.addPanel) {
+        window.sidebar.addPanel(title, url, '');
+        app.showNotification('✅ 请在侧边栏确认添加收藏', 'success');
+    } else if (window.external && ('AddFavorite' in window.external)) {
+        window.external.AddFavorite(url, title);
+        app.showNotification('✅ 已添加到收藏夹', 'success');
+    } else {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const shortcut = isMac ? 'Cmd + D' : 'Ctrl + D';
+        
+        const modal = document.createElement('div');
+        modal.className = 'bookmark-modal';
+        modal.innerHTML = `
+            <div class="modal-overlay" onclick="this.parentElement.remove()"></div>
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3>🔖 收藏本站</h3>
+                    <button class="modal-close" onclick="this.closest('.bookmark-modal').remove()">&times;</button>
+                </div>
+                <div class="modal-content-body" style="text-align: center; padding: 40px 28px;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">🔖</div>
+                    <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 20px;">
+                        将本站添加到收藏夹
+                    </h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6;">
+                        请按 <kbd>${shortcut}</kbd> 将本站添加到浏览器收藏夹，<br>
+                        方便下次快速访问
+                    </p>
+                    <div style="background: var(--dark-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                        <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">网站链接</div>
+                        <div style="color: var(--primary-color); font-weight: 600; word-break: break-all;">${url}</div>
+                    </div>
+                    <button onclick="copyCurrentUrl(); this.closest('.bookmark-modal').remove();" class="copy-btn" style="width: 100%; padding: 12px;">
+                        📋 复制链接
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
     }
-    app.showNotification('🎯 测速功能开发中...', 'info');
-    // TODO: 实现测速逻辑
+}
+
+// 复制当前网址
+function copyCurrentUrl() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        app.showNotification('✅ 网址已复制到剪贴板', 'success');
+    }).catch(err => {
+        console.error('复制失败:', err);
+        app.showNotification('❌ 复制失败', 'error');
+    });
 }
 
 // 主题切换
@@ -922,10 +822,6 @@ function toggleTheme() {
     app.updateThemeIcon(newTheme);
     app.showNotification(`${newTheme === 'dark' ? '🌙' : '☀️'} 已切换到${newTheme === 'dark' ? '深色' : '浅色'}模式`, 'info');
 }
-
-ProxyApp.prototype.updateThemeIcon = function(theme) {
-    document.getElementById('themeIcon').textContent = theme === 'dark' ? '🌙' : '☀️';
-};
 
 // 快捷键提示
 function toggleKeyboardHints() {
@@ -947,10 +843,6 @@ function clearCacheAndReload() {
         });
     }
     
-    localStorage.removeItem('proxyFavorites');
-    localStorage.removeItem('searchHistory');
-    localStorage.removeItem('savedFilter');
-    
     app.showNotification('🔄 正在刷新...', 'info');
     setTimeout(() => window.location.reload(true), 500);
 }
@@ -960,7 +852,6 @@ let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new ProxyApp();
     
-    // 显示快捷键提示3秒
     setTimeout(() => {
         toggleKeyboardHints();
     }, 1000);
