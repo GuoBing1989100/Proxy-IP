@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProxyIP Filter - 高端代理IP筛选器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* 动态背景 */
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 浮动粒子效果 */
+        .particle {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        /* 导航栏 */
+        .navbar {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #a8edea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        /* 玻璃态卡片 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin: 2rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 筛选区域 */
+        .filter-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-input, .filter-select {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .filter-select option {
+            background: #667eea;
+            color: #fff;
+        }
+
+        /* 按钮组 */
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 表格样式 */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        th:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        td {
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* 加载动画 */
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 旋转动画（刷新按钮） */
+        .rotating {
+            animation: spin 1s linear infinite;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .filter-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* 标签样式 */
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tag-country {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #f093fb;
+        }
+
+        /* 更新时间显示 */
+        .update-time {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    🚀 ProxyIP Filter
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">总代理数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="countryCount">0</div>
+                        <div class="stat-label">国家数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="filteredCount">0</div>
+                        <div class="stat-label">筛选结果</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="container">
+        <!-- 筛选面板 -->
+        <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.5rem;">🔍 智能筛选</h2>
+                <div class="update-time" id="updateTime">数据加载中...</div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label class="filter-label">🌍 国家/地区</label>
+                    <select class="filter-select" id="countryFilter">
+                        <option value="">全部国家</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">🔌 端口</label>
+                    <input type="text" class="filter-input" id="portFilter" placeholder="输入端口号...">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">🏢 ISP/公司</label>
+                    <input type="text" class="filter-input" id="companyFilter" placeholder="搜索公司名称...">
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="resetFilters()">🔄 重置筛选</button>
+                <button class="btn btn-secondary" id="refreshBtn" onclick="refreshData()">
+                    <span id="refreshIcon">🔃</span> 刷新数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="glass-card">
+            <h2 style="margin-bottom: 1.5rem; font-size: 1.5rem;">📊 代理列表</h2>
+            <div class="table-wrapper">
+                <table id="proxyTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">IP地址 ↕</th>
+                            <th onclick="sortTable(1)">端口 ↕</th>
+                            <th onclick="sortTable(2)">国家 ↕</th>
+                            <th onclick="sortTable(3)">ISP/公司 ↕</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">
+                                <div class="loader"></div>
+                                <p>正在加载数据...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+        <p>数据来源: <a href="https://github.com/GuoBing1989100/ProxyIP" target="_blank">GuoBing1989100/ProxyIP</a></p>
+        <p>每日自动更新 | Made with ❤️</p>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let lastUpdateTime = null;
+
+        // 完整的国家代码到中文映射（包含200+国家）
+        const countryNames = {
+            'AD': '安道尔', 'AE': '阿联酋', 'AF': '阿富汗', 'AG': '安提瓜和巴布达',
+            'AI': '安圭拉', 'AL': '阿尔巴尼亚', 'AM': '亚美尼亚', 'AO': '安哥拉',
+            'AQ': '南极洲', 'AR': '阿根廷', 'AS': '美属萨摩亚', 'AT': '奥地利',
+            'AU': '澳大利亚', 'AW': '阿鲁巴', 'AX': '奥兰群岛', 'AZ': '阿塞拜疆',
+            'BA': '波黑', 'BB': '巴巴多斯', 'BD': '孟加拉国', 'BE': '比利时',
+            'BF': '布基纳法索', 'BG': '保加利亚', 'BH': '巴林', 'BI': '布隆迪',
+            'BJ': '贝宁', 'BL': '圣巴泰勒米', 'BM': '百慕大', 'BN': '文莱',
+            'BO': '玻利维亚', 'BQ': '荷兰加勒比', 'BR': '巴西', 'BS': '巴哈马',
+            'BT': '不丹', 'BV': '布韦岛', 'BW': '博茨瓦纳', 'BY': '白俄罗斯',
+            'BZ': '伯利兹', 'CA': '加拿大', 'CC': '科科斯群岛', 'CD': '刚果(金)',
+            'CF': '中非', 'CG': '刚果(布)', 'CH': '瑞士', 'CI': '科特迪瓦',
+            'CK': '库克群岛', 'CL': '智利', 'CM': '喀麦隆', 'CN': '中国',
+            'CO': '哥伦比亚', 'CR': '哥斯达黎加', 'CU': '古巴', 'CV': '佛得角',
+            'CW': '库拉索', 'CX': '圣诞岛', 'CY': '塞浦路斯', 'CZ': '捷克',
+            'DE': '德国', 'DJ': '吉布提', 'DK': '丹麦', 'DM': '多米尼克',
+            'DO': '多米尼加', 'DZ': '阿尔及利亚', 'EC': '厄瓜多尔', 'EE': '爱沙尼亚',
+            'EG': '埃及', 'EH': '西撒哈拉', 'ER': '厄立特里亚', 'ES': '西班牙',
+            'ET': '埃塞俄比亚', 'FI': '芬兰', 'FJ': '斐济', 'FK': '福克兰群岛',
+            'FM': '密克罗尼西亚', 'FO': '法罗群岛', 'FR': '法国', 'GA': '加蓬',
+            'GB': '英国', 'GD': '格林纳达', 'GE': '格鲁吉亚', 'GF': '法属圭亚那',
+            'GG': '根西岛', 'GH': '加纳', 'GI': '直布罗陀', 'GL': '格陵兰',
+            'GM': '冈比亚', 'GN': '几内亚', 'GP': '瓜德罗普', 'GQ': '赤道几内亚',
+            'GR': '希腊', 'GS': '南乔治亚和南桑威奇群岛', 'GT': '危地马拉', 'GU': '关岛',
+            'GW': '几内亚比绍', 'GY': '圭亚那', 'HK': '中国香港', 'HM': '赫德岛和麦克唐纳群岛',
+            'HN': '洪都拉斯', 'HR': '克罗地亚', 'HT': '海地', 'HU': '匈牙利',
+            'ID': '印度尼西亚', 'IE': '爱尔兰', 'IL': '以色列', 'IM': '马恩岛',
+            'IN': '印度', 'IO': '英属印度洋领地', 'IQ': '伊拉克', 'IR': '伊朗',
+            'IS': '冰岛', 'IT': '意大利', 'JE': '泽西岛', 'JM': '牙买加',
+            'JO': '约旦', 'JP': '日本', 'KE': '肯尼亚', 'KG': '吉尔吉斯斯坦',
+            'KH': '柬埔寨', 'KI': '基里巴斯', 'KM': '科摩罗', 'KN': '圣基茨和尼维斯',
+            'KP': '朝鲜', 'KR': '韩国', 'KW': '科威特', 'KY': '开曼群岛',
+            'KZ': '哈萨克斯坦', 'LA': '老挝', 'LB': '黎巴嫩', 'LC': '圣卢西亚',
+            'LI': '列支敦士登', 'LK': '斯里兰卡', 'LR': '利比里亚', 'LS': '莱索托',
+            'LT': '立陶宛', 'LU': '卢森堡', 'LV': '拉脱维亚', 'LY': '利比亚',
+            'MA': '摩洛哥', 'MC': '摩纳哥', 'MD': '摩尔多瓦', 'ME': '黑山',
+            'MF': '法属圣马丁', 'MG': '马达加斯加', 'MH': '马绍尔群岛', 'MK': '北马其顿',
+            'ML': '马里', 'MM': '缅甸', 'MN': '蒙古', 'MO': '中国澳门',
+            'MP': '北马里亚纳群岛', 'MQ': '马提尼克', 'MR': '毛里塔尼亚', 'MS': '蒙特塞拉特',
+            'MT': '马耳他', 'MU': '毛里求斯', 'MV': '马尔代夫', 'MW': '马拉维',
+            'MX': '墨西哥', 'MY': '马来西亚', 'MZ': '莫桑比克', 'NA': '纳米比亚',
+            'NC': '新喀里多尼亚', 'NE': '尼日尔', 'NF': '诺福克岛', 'NG': '尼日利亚',
+            'NI': '尼加拉瓜', 'NL': '荷兰', 'NO': '挪威', 'NP': '尼泊尔',
+            'NR': '瑙鲁', 'NU': '纽埃', 'NZ': '新西兰', 'OM': '阿曼',
+            'PA': '巴拿马', 'PE': '秘鲁', 'PF': '法属波利尼西亚', 'PG': '巴布亚新几内亚',
+            'PH': '菲律宾', 'PK': '巴基斯坦', 'PL': '波兰', 'PM': '圣皮埃尔和密克隆',
+            'PN': '皮特凯恩群岛', 'PR': '波多黎各', 'PS': '巴勒斯坦', 'PT': '葡萄牙',
+            'PW': '帕劳', 'PY': '巴拉圭', 'QA': '卡塔尔', 'RE': '留尼汪',
+            'RO': '罗马尼亚', 'RS': '塞尔维亚', 'RU': '俄罗斯', 'RW': '卢旺达',
+            'SA': '沙特阿拉伯', 'SB': '所罗门群岛', 'SC': '塞舌尔', 'SD': '苏丹',
+            'SE': '瑞典', 'SG': '新加坡', 'SH': '圣赫勒拿', 'SI': '斯洛文尼亚',
+            'SJ': '斯瓦尔巴和扬马延', 'SK': '斯洛伐克', 'SL': '塞拉利昂', 'SM': '圣马力诺',
+            'SN': '塞内加尔', 'SO': '索马里', 'SR': '苏里南', 'SS': '南苏丹',
+            'ST': '圣多美和普林西比', 'SV': '萨尔瓦多', 'SX': '荷属圣马丁', 'SY': '叙利亚',
+            'SZ': '斯威士兰', 'TC': '特克斯和凯科斯群岛', 'TD': '乍得', 'TF': '法属南部领地',
+            'TG': '多哥', 'TH': '泰国', 'TJ': '塔吉克斯坦', 'TK': '托克劳',
+            'TL': '东帝汶', 'TM': '土库曼斯坦', 'TN': '突尼斯', 'TO': '汤加',
+            'TR': '土耳其', 'TT': '特立尼达和多巴哥', 'TV': '图瓦卢', 'TW': '中国台湾',
+            'TZ': '坦桑尼亚', 'UA': '乌克兰', 'UG': '乌干达', 'UM': '美国本土外小岛屿',
+            'US': '美国', 'UY': '乌拉圭', 'UZ': '乌兹别克斯坦', 'VA': '梵蒂冈',
+            'VC': '圣文森特和格林纳丁斯', 'VE': '委内瑞拉', 'VG': '英属维尔京群岛', 'VI': '美属维尔京群岛',
+            'VN': '越南', 'VU': '瓦努阿图', 'WF': '瓦利斯和富图纳', 'WS': '萨摩亚',
+            'YE': '也门', 'YT': '马约特', 'ZA': '南非', 'ZM': '赞比亚',
+            'ZW': '津巴布韦'
+        };
+
+        // 创建浮动粒子
+        function createParticles() {
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                document.body.appendChild(particle);
+            }
+        }
+
+        // 显示Toast提示
+        function showToast(message, duration = 2000) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, duration);
+        }
+
+        // 更新时间显示
+        function updateTimeDisplay() {
+            if (lastUpdateTime) {
+                const timeStr = lastUpdateTime.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                document.getElementById('updateTime').textContent = `最后更新: ${timeStr}`;
+            }
+        }
+
+        // 加载数据 - 从项目内部读取
+        async function loadData() {
+            try {
+                // 添加时间戳防止缓存
+                const timestamp = new Date().getTime();
+                const response = await fetch(`Data/alive.txt?t=${timestamp}`);
+                const text = await response.text();
+                
+                allData = text.trim().split('\n').map(line => {
+                    const [ip, port, countryCode, company] = line.split(',');
+                    return { 
+                        ip, 
+                        port, 
+                        countryCode,
+                        country: countryNames[countryCode] || countryCode,
+                        company: company ? company.trim() : 'Unknown'
+                    };
+                });
+                
+                filteredData = [...allData];
+                lastUpdateTime = new Date();
+                updateStats();
+                populateCountryFilter();
+                renderTable();
+                updateTimeDisplay();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="5" style="text-align: center; color: #ff6b6b;">数据加载失败，请确保 Data/alive.txt 文件存在</td></tr>';
+            }
+        }
+
+        // 刷新数据
+        async function refreshData() {
+            const btn = document.getElementById('refreshBtn');
+            const icon = document.getElementById('refreshIcon');
+            
+            // 防止重复点击
+            if (btn.disabled) return;
+            
+            btn.disabled = true;
+            icon.classList.add('rotating');
+            
+            try {
+                await loadData();
+                showToast('✅ 数据刷新成功！');
+            } catch (error) {
+                showToast('❌ 数据刷新失败');
+            } finally {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    icon.classList.remove('rotating');
+                }, 1000);
+            }
+        }
+
+        // 更新统计
+        function updateStats() {
+            document.getElementById('totalCount').textContent = allData.length.toLocaleString();
+            const countries = new Set(allData.map(item => item.country));
+            document.getElementById('countryCount').textContent = countries.size;
+            document.getElementById('filteredCount').textContent = filteredData.length.toLocaleString();
+        }
+
+        // 填充国家筛选器
+        function populateCountryFilter() {
+            const countries = [...new Set(allData.map(item => item.country))].sort();
+            const select = document.getElementById('countryFilter');
+            
+            // 清空现有选项（保留"全部国家"）
+            select.innerHTML = '<option value="">全部国家</option>';
+            
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                select.appendChild(option);
+            });
+        }
+
+        // 应用筛选（实时触发）
+        function applyFilters() {
+            const country = document.getElementById('countryFilter').value;
+            const port = document.getElementById('portFilter').value.trim();
+            const company = document.getElementById('companyFilter').value.trim().toLowerCase();
+
+            filteredData = allData.filter(item => {
+                return (!country || item.country === country) &&
+                       (!port || item.port.includes(port)) &&
+                       (!company || item.company.toLowerCase().includes(company));
+            });
+
+            updateStats();
+            renderTable();
+        }
+
+        // 重置筛选
+        function resetFilters() {
+            document.getElementById('countryFilter').value = '';
+            document.getElementById('portFilter').value = '';
+            document.getElementById('companyFilter').value = '';
+            filteredData = [...allData];
+            updateStats();
+            renderTable();
+            showToast('🔄 筛选已重置');
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">没有找到匹配的数据</td></tr>';
+                return;
+            }
+
+            // 只显示前1000条，避免性能问题
+            const displayData = filteredData.slice(0, 1000);
+            tbody.innerHTML = displayData.map(item => `
+                <tr>
+                    <td>${item.ip}</td>
+                    <td>${item.port}</td>
+                    <td><span class="tag tag-country">${item.country}</span></td>
+                    <td>${item.company}</td>
+                    <td>
+                        <button class="copy-btn tooltip" onclick="copyToClipboard('${item.ip}:${item.port}')">
+                            📋 复制
+                            <span class="tooltiptext">复制到剪贴板</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            if (filteredData.length > 1000) {
+                tbody.innerHTML += `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.7);">仅显示前1000条结果，请使用筛选功能缩小范围</td></tr>`;
+            }
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ 已复制: ' + text);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                showToast('❌ 复制失败');
+            });
+        }
+
+        // 表格排序
+        let sortDirection = {};
+        function sortTable(columnIndex) {
+            const key = ['ip', 'port', 'country', 'company'][columnIndex];
+            sortDirection[key] = !sortDirection[key];
+            
+            filteredData.sort((a, b) => {
+                let aVal = a[key];
+                let bVal = b[key];
+                
+                if (key === 'port') {
+                    aVal = parseInt(aVal);
+                    bVal = parseInt(bVal);
+                }
+                
+                if (sortDirection[key]) {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            renderTable();
+        }
+
+        // 初始化
+        createParticles();
+        loadData();
+
+        // 实时筛选 - 输入即触发
+        ['countryFilter', 'portFilter', 'companyFilter'].forEach(id => {
+            document.getElementById(id).addEventListener('input', applyFilters);
+        });
+    </script>
+</body>
+</html>
