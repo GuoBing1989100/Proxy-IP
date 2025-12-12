@@ -3,74 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>代理IP优选 - Proxy IP Selector</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>代理IP优选中心 - Proxy Selector</title>
+    
+    <!-- 缓存控制 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- 添加版本号防止缓存 -->
+    <link rel="stylesheet" href="css/style.css?v=20251212-002">
 </head>
 <body>
+    <!-- 背景动画 -->
+    <div class="bg-animation">
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+        <div class="bg-circle"></div>
+    </div>
+
     <div class="container">
+        <!-- 顶部导航栏 -->
         <div class="header">
-            <h1>🚀 代理IP优选中心</h1>
-            <p>自动更新的优质代理IP列表 - 实时数据来自 互联网</p>
-        </div>
-
-        <div class="controls">
-            <div class="control-group">
-                <label>🔍 搜索</label>
-                <input type="text" id="searchInput" placeholder="搜索 IP、国家或公司...">
-            </div>
-            <div class="control-group">
-                <label>🌍 国家筛选</label>
-                <select id="countryFilter">
-                    <option value="">全部国家</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>🏢 公司筛选</label>
-                <select id="companyFilter">
-                    <option value="">全部公司</option>
-                </select>
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🚀</span>
+                    <div class="logo-text">
+                        <h1>代理IP优选中心</h1>
+                        <p class="subtitle">Proxy IP Selector - 智能筛选，极速体验</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button onclick="clearCacheAndReload()" class="refresh-btn" title="强制刷新">
+                        <span class="icon">🔄</span>
+                        <span class="text">刷新</span>
+                    </button>
+                    <button onclick="exportData()" class="export-btn" title="导出数据">
+                        <span class="icon">📥</span>
+                        <span class="text">导出</span>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="stats">
-            <div class="stat-item">
-                <span class="stat-label">总代理数</span>
-                <span class="stat-value" id="totalCount">0</span>
+        <!-- 统计面板 -->
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <span class="stat-label">总代理数</span>
+                    <span class="stat-value" id="totalCount">0</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">显示结果</span>
-                <span class="stat-value" id="filteredCount">0</span>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <span class="stat-label">筛选结果</span>
+                    <span class="stat-value" id="filteredCount">0</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">国家数量</span>
-                <span class="stat-value" id="countryCount">0</span>
+            <div class="stat-card">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-info">
+                    <span class="stat-label">国家数量</span>
+                    <span class="stat-value" id="countryCount">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔌</div>
+                <div class="stat-info">
+                    <span class="stat-label">端口类型</span>
+                    <span class="stat-value" id="portCount">0</span>
+                </div>
             </div>
         </div>
 
-        <div class="table-container">
-            <div id="loadingMessage" class="loading">正在加载代理数据</div>
-            <table id="proxyTable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>IP地址</th>
-                        <th>端口</th>
-                        <th>国家</th>
-                        <th>运营商/公司</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="proxyTableBody">
-                </tbody>
-            </table>
-            <div id="noDataMessage" class="no-data" style="display: none;">
-                没有找到匹配的代理数据
+        <!-- 筛选控制面板 -->
+        <div class="controls-panel">
+            <div class="controls-header">
+                <h2>🔍 智能筛选</h2>
+                <button onclick="resetFilters()" class="reset-btn">
+                    <span class="icon">↺</span>
+                    重置筛选
+                </button>
+            </div>
+            
+            <div class="controls-grid">
+                <div class="control-item">
+                    <label>
+                        <span class="control-icon">🔎</span>
+                        <span class="control-label">关键词搜索</span>
+                    </label>
+                    <input type="text" id="searchInput" placeholder="搜索 IP、国家或公司..." class="control-input">
+                </div>
+
+                <div class="control-item">
+                    <label>
+                        <span class="control-icon">🌐</span>
+                        <span class="control-label">国家地区</span>
+                    </label>
+                    <select id="countryFilter" class="control-select">
+                        <option value="">全部国家</option>
+                    </select>
+                </div>
+
+                <div class="control-item">
+                    <label>
+                        <span class="control-icon">🔌</span>
+                        <span class="control-label">端口筛选</span>
+                    </label>
+                    <select id="portFilter" class="control-select">
+                        <option value="">全部端口</option>
+                    </select>
+                </div>
+
+                <div class="control-item">
+                    <label>
+                        <span class="control-icon">🏢</span>
+                        <span class="control-label">运营商/公司</span>
+                    </label>
+                    <select id="companyFilter" class="control-select">
+                        <option value="">全部公司</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据表格区域 -->
+        <div class="table-section">
+            <div class="table-header">
+                <h2>📋 代理列表</h2>
+                <div class="table-actions">
+                    <button onclick="selectAll()" class="action-btn">全选</button>
+                    <button onclick="copySelected()" class="action-btn">复制选中</button>
+                </div>
+            </div>
+
+            <div id="loadingMessage" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">正在加载代理数据...</p>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="proxyTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th class="col-checkbox">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                            </th>
+                            <th class="col-ip">IP地址</th>
+                            <th class="col-port">端口</th>
+                            <th class="col-country">国家</th>
+                            <th class="col-company">运营商/公司</th>
+                            <th class="col-actions">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="proxyTableBody">
+                    </tbody>
+                </table>
+
+                <div id="noDataMessage" class="no-data-container" style="display: none;">
+                    <div class="no-data-icon">🔍</div>
+                    <h3>未找到匹配的代理</h3>
+                    <p>请尝试调整筛选条件</p>
+                </div>
+            </div>
+
+            <!-- 分页控制 -->
+            <div id="paginationContainer" class="pagination" style="display: none;">
+                <button onclick="prevPage()" id="prevBtn" class="page-btn">← 上一页</button>
+                <span class="page-info">
+                    第 <span id="currentPage">1</span> 页，共 <span id="totalPages">1</span> 页
+                </span>
+                <button onclick="nextPage()" id="nextBtn" class="page-btn">下一页 →</button>
             </div>
         </div>
     </div>
 
-    <!-- 按顺序加载 JS 文件 -->
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/app.js"></script>
+    <!-- 按顺序加载 JS 文件，添加版本号 -->
+    <script src="js/config.js?v=20251212-002"></script>
+    <script src="js/utils.js?v=20251212-002"></script>
+    <script src="js/app.js?v=20251212-002"></script>
 </body>
 </html>
+`
