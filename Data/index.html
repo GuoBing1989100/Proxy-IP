@@ -296,6 +296,49 @@
             animation: spin 1s linear infinite;
         }
 
+        /* 分页样式 */
+        .pagination {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            min-width: 32px;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .pagination button.active {
+            background: #f093fb;
+            font-weight: 700;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            margin-top: 0.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             .filter-section {
@@ -499,6 +542,9 @@
                     </tbody>
                 </table>
             </div>
+            <!-- 分页区域 -->
+            <div id="pagination" class="pagination"></div>
+            <div id="paginationInfo" class="pagination-info"></div>
         </div>
     </div>
 
@@ -512,6 +558,10 @@
         let allData = [];
         let filteredData = [];
         let lastUpdateTime = null;
+
+        // 分页相关
+        let currentPage = 1;
+        const pageSize = 50;
 
         // 创建浮动粒子
         function createParticles() {
@@ -598,10 +648,12 @@
                 console.log('📝 示例数据:', allData.slice(0, 3));
                 
                 filteredData = [...allData];
+                currentPage = 1;
                 lastUpdateTime = new Date();
                 updateStats();
                 populateCountryFilter();
                 renderTable();
+                renderPagination();
                 updateTimeDisplay();
                 
             } catch (error) {
@@ -673,8 +725,10 @@
                        (!company || item.company.toLowerCase().includes(company));
             });
 
+            currentPage = 1; // 筛选后回到第一页
             updateStats();
             renderTable();
+            renderPagination();
         }
 
         // 重置筛选
@@ -683,21 +737,32 @@
             document.getElementById('portFilter').value = '';
             document.getElementById('companyFilter').value = '';
             filteredData = [...allData];
+            currentPage = 1;
             updateStats();
             renderTable();
+            renderPagination();
             showToast('🔄 筛选已重置');
         }
 
-        // 渲染表格
+        // 渲染表格（带分页）
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             
             if (filteredData.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">没有找到匹配的数据</td></tr>';
+                document.getElementById('pagination').innerHTML = '';
+                document.getElementById('paginationInfo').textContent = '';
                 return;
             }
 
-            const displayData = filteredData.slice(0, 1000);
+            const total = filteredData.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, total);
+            const displayData = filteredData.slice(startIndex, endIndex);
+
             const rows = displayData.map(item => {
                 // 转义特殊字符防止XSS
                 const safeIP = item.ip.replace(/'/g, "\\'");
@@ -721,11 +786,67 @@
 
             tbody.innerHTML = rows;
 
-            if (filteredData.length > 1000) {
-                tbody.innerHTML += `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.7);">
-                    仅显示前1000条结果，请使用筛选功能缩小范围
-                </td></tr>`;
+            // 更新分页信息
+            const info = `第 ${currentPage} / ${totalPages} 页，每页 ${pageSize} 条，共 ${total} 条`;
+            document.getElementById('paginationInfo').textContent = info;
+        }
+
+        // 渲染分页控件
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+
+            if (filteredData.length === 0) return;
+
+            const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+
+            // 上一页
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '«';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                    renderPagination();
+                }
+            };
+            container.appendChild(prevBtn);
+
+            // 页码按钮（简单版：最多显示 7 个）
+            const maxButtons = 7;
+            let start = Math.max(1, currentPage - 3);
+            let end = Math.min(totalPages, start + maxButtons - 1);
+            if (end - start + 1 < maxButtons) {
+                start = Math.max(1, end - maxButtons + 1);
             }
+
+            for (let i = start; i <= end; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                if (i === currentPage) {
+                    btn.classList.add('active');
+                }
+                btn.onclick = () => {
+                    currentPage = i;
+                    renderTable();
+                    renderPagination();
+                };
+                container.appendChild(btn);
+            }
+
+            // 下一页
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '»';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                    renderPagination();
+                }
+            };
+            container.appendChild(nextBtn);
         }
 
         // 复制到剪贴板
@@ -753,12 +874,17 @@
                     bVal = parseInt(bVal);
                 }
                 
-                return sortDirection[key] ? 
-                    (aVal > bVal ? 1 : -1) : 
-                    (aVal < bVal ? 1 : -1);
+                if (aVal === bVal) return 0;
+                if (sortDirection[key]) {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
             });
             
+            currentPage = 1; // 排序后回到第一页
             renderTable();
+            renderPagination();
         }
 
         // 初始化
