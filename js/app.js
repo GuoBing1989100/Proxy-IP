@@ -64,11 +64,13 @@ class ProxyApp {
      * 填充筛选器选项
      */
     populateFilters() {
-        // 获取所有唯一的国家和公司
+        // 获取所有唯一的国家、端口和公司
         const countries = [...new Set(this.allProxies.map(p => p.countryName))].sort();
+        const ports = [...new Set(this.allProxies.map(p => p.port))].sort((a, b) => parseInt(a) - parseInt(b));
         const companies = [...new Set(this.allProxies.map(p => p.company))].sort();
         
         const countrySelect = document.getElementById('countryFilter');
+        const portSelect = document.getElementById('portFilter');
         const companySelect = document.getElementById('companyFilter');
         
         // 添加国家选项
@@ -77,6 +79,14 @@ class ProxyApp {
             option.value = country;
             option.textContent = country;
             countrySelect.appendChild(option);
+        });
+        
+        // 添加端口选项
+        ports.forEach(port => {
+            const option = document.createElement('option');
+            option.value = port;
+            option.textContent = port;
+            portSelect.appendChild(option);
         });
         
         // 添加公司选项
@@ -88,7 +98,7 @@ class ProxyApp {
             companySelect.appendChild(option);
         });
         
-        console.log(`已加载 ${countries.length} 个国家，${companies.length} 个公司`);
+        console.log(`已加载 ${countries.length} 个国家，${ports.length} 个端口，${companies.length} 个公司`);
     }
 
     /**
@@ -118,11 +128,8 @@ class ProxyApp {
             row.innerHTML = `
                 <td class="ip-cell">${proxy.ip}</td>
                 <td class="port-cell">${proxy.port}</td>
-                <td class="country-cell">
-                    <span>${proxy.countryCode}</span>
-                    <span>${proxy.countryName}</span>
-                </td>
-                <td title="${proxy.company}">${proxy.company.length > 60 ? proxy.company.substring(0, 60) + '...' : proxy.company}</td>
+                <td class="country-cell">${proxy.countryName}</td>
+                <td class="company-cell" title="${proxy.company}">${proxy.company}</td>
                 <td>
                     <button class="copy-btn" onclick="app.copyProxy('${proxy.ip}:${proxy.port}', this)">
                         📋 复制
@@ -141,15 +148,12 @@ class ProxyApp {
      * 设置事件监听器
      */
     setupEventListeners() {
-        const searchInput = document.getElementById('searchInput');
         const countryFilter = document.getElementById('countryFilter');
+        const portFilter = document.getElementById('portFilter');
         const companyFilter = document.getElementById('companyFilter');
         
-        // 使用防抖优化搜索性能
-        const debouncedFilter = debounce(() => this.applyFilters(), 300);
-        
-        searchInput.addEventListener('input', debouncedFilter);
         countryFilter.addEventListener('change', () => this.applyFilters());
+        portFilter.addEventListener('change', () => this.applyFilters());
         companyFilter.addEventListener('change', () => this.applyFilters());
     }
 
@@ -157,21 +161,16 @@ class ProxyApp {
      * 应用筛选条件
      */
     applyFilters() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const countryFilter = document.getElementById('countryFilter').value;
+        const portFilter = document.getElementById('portFilter').value;
         const companyFilter = document.getElementById('companyFilter').value;
         
         this.filteredProxies = this.allProxies.filter(proxy => {
-            const matchesSearch = !searchTerm || 
-                proxy.ip.includes(searchTerm) ||
-                proxy.countryName.toLowerCase().includes(searchTerm) ||
-                proxy.countryCode.toLowerCase().includes(searchTerm) ||
-                proxy.company.toLowerCase().includes(searchTerm);
-            
             const matchesCountry = !countryFilter || proxy.countryName === countryFilter;
+            const matchesPort = !portFilter || proxy.port === portFilter;
             const matchesCompany = !companyFilter || proxy.company === companyFilter;
             
-            return matchesSearch && matchesCountry && matchesCompany;
+            return matchesCountry && matchesPort && matchesCompany;
         });
         
         this.renderTable();
