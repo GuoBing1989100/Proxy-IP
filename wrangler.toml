@@ -1,5 +1,49 @@
 name = "proxy-ip-selector"
 compatibility_date = "2025-12-12"
 
+# 工作环境
+workers_dev = true
+
+# 静态资源配置
 [site]
 bucket = "./"
+
+# 构建配置
+[build]
+command = ""
+watch_dirs = ["./"]
+
+# 环境变量
+[vars]
+ENVIRONMENT = "production"
+
+# 路由配置
+[[routes]]
+pattern = "proxyip.example.com/*"
+zone_name = "example.com"
+
+# 开发环境配置
+[env.development]
+name = "proxy-ip-selector-dev"
+workers_dev = true
+
+[env.development.vars]
+ENVIRONMENT = "development"
+
+# 生产环境配置
+[env.production]
+name = "proxy-ip-selector-prod"
+workers_dev = false
+
+[env.production.vars]
+ENVIRONMENT = "production"
+
+# 性能优化
+[limits]
+cpu_ms = 50
+
+# KV命名空间配置（可选，用于缓存）
+# [[kv_namespaces]]
+# binding = "PROXY_CACHE"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"
